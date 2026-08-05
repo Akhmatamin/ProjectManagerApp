@@ -1,116 +1,60 @@
-from datetime import timedelta, datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
-from app.shared.db.database import get_db
-from app.auth.models import RefreshToken
+from fastapi import APIRouter, Depends, status
+from dependency_injector.wiring import inject, Provide
 from app.users.models import User
-from .schemas import (UserRegisterSchema, UserLoginSchema,
-                      ChangePasswordSchema, RefreshTokenSchema,
-                      ResetPasswordSchema)
-from app.shared.config import REFRESH_TOKEN_LIFETIME
-from sqlalchemy.orm import Session
-from .service import (get_password_hash, verify_password, create_access_token,
-                      create_refresh_token,get_current_user, generate_code)
+from app.auth.interfaces.service import IAuthService
+from .schemas import (UserRegisterSchema, UserCreatedResponse,UserLoginSchema,
+                      ChangePasswordSchema, RefreshTokenSchema, RequestResetCodeSchema, ResetPasswordSchema)
+from app.shared.security import get_current_user
+from app.shared.container import Container
 
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 
-
-@auth_router.post('/register', response_model=dict, status_code=status.HTTP_201_CREATED)
-def register(user: UserRegisterSchema, db: Session = Depends(get_db)):
-    hash_password = get_password_hash(user.password)
-    user_email = db.query(User).filter(User.email == user.email).first()
-    if user_email:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-
-    user_data = User(
-        email=user.email,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        hashed_password=hash_password,)
-
-    db.add(user_data)
-    db.commit()
-    db.refresh(user_data)
-    return {"message": "User registered successfully!"}
+@auth_router.post('/register', response_model=UserCreatedResponse, status_code=status.HTTP_201_CREATED)
+@inject
+def register_user(user_data: UserRegisterSchema, auth_service: IAuthService = Depends(Provide[Container.auth_service])):
+    return auth_service.register_user(user_data)
 
 
 @auth_router.post('/login', response_model=dict, status_code=status.HTTP_200_OK)
-def login(user_data: UserLoginSchema, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_data.email).first()
-    if not user or not verify_password(user_data.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password!")
-
-    access_token = create_access_token(data={"sub": str(user.id)})
-    refresh_token = create_refresh_token(data={"sub": str(user.id)})
-
-    token = RefreshToken(user_id=user.id, token=refresh_token)
-    db.add(token)
-    db.commit()
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-    }
+@inject
+def login(user_data: UserLoginSchema, auth_service: IAuthService = Depends(Provide[Container.auth_service]))-> dict:
+    return auth_service.login(user_data)
 
 
 @auth_router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
-def logout(token: RefreshTokenSchema, db: Session = Depends(get_db)):
-    stored_token = db.query(RefreshToken).filter(RefreshToken.token == token.refresh_token).first()
-    if not stored_token:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect refresh token")
-
-    db.delete(stored_token)
-    db.commit()
-
+@inject
+def logout(token: RefreshTokenSchema, auth_service: IAuthService = Depends(Provide[Container.auth_service])):
+    auth_service.logout(token.refresh_token)
 
 
 @auth_router.post('/refresh', response_model=dict, status_code=status.HTTP_200_OK)
-def refresh(token: RefreshTokenSchema, db: Session = Depends(get_db)):
-    stored_token = db.query(RefreshToken).filter(RefreshToken.token == token.refresh_token).first()
-    if not stored_token:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect refresh token")
+@inject
+def refresh(token: RefreshTokenSchema, auth_service: IAuthService = Depends(Provide[Container.auth_service])):
+    return auth_service.refresh_new_token(token.refresh_token)
 
-    valid_refresh_lifetime = datetime.now(timezone.utc) - timedelta(days=REFRESH_TOKEN_LIFETIME)
-    if stored_token.created_at < valid_refresh_lifetime:
-        db.delete(stored_token)
-        db.commit()
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired, please login again")
-
-    access_token = create_access_token(data={"sub": str(stored_token.user_id)})
-
-    return {
-        "access_token": access_token,
-    }
 
 
 @auth_router.put('/change_password', response_model=dict, status_code=status.HTTP_200_OK)
+@inject
 def change_password(password_data: ChangePasswordSchema,
                     current_user: User = Depends(get_current_user),
-                    db: Session = Depends(get_db)):
+                    auth_service: IAuthService = Depends(Provide[Container.auth_service])):
 
-    if not verify_password(password_data.old_password, current_user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
-
-    current_user.hashed_password = get_password_hash(password_data.new_password)
-    db.query(RefreshToken).filter(RefreshToken.user_id == current_user.id).delete()
-    db.commit()
-
+    auth_service.change_password(current_user, password_data)
     return {"message": "Password changed successfully!"}
 
 
-# @auth_router.put('/reset_password', response_model=dict, status_code=status.HTTP_200_OK)
-# def reset_password(user_data: ResetPasswordSchema, db: Session = Depends(get_db)):
-#     user = db.query(User).filter(User.email == user_data.email).first()
-#     if not user:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
-#     verification_code = generate_code()
-#
-#
-#     if user_data.verifier_code != verification_code:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect verification code")
-#
-#     user.hashed_password = get_password_hash(user_data.new_password)
-#     db.commit()
-#     return {"message": "Password reset successfully!"}
+@auth_router.post('/forgot_password',response_model=dict, status_code=status.HTTP_200_OK)
+@inject
+def get_verification_code(email: RequestResetCodeSchema, auth_service: IAuthService = Depends(Provide[Container.auth_service])):
+    return auth_service.request_reset_code(email.email)
+
+
+@auth_router.post('/reset_password', response_model=dict, status_code=status.HTTP_200_OK)
+@inject
+def reset_password(data: ResetPasswordSchema,
+                   auth_service: IAuthService = Depends(Provide[Container.auth_service])):
+    return auth_service.reset_password(data.email, data.code, data.new_password)
