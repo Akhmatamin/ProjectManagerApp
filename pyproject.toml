@@ -4,9 +4,16 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.18.5",
+    "dependency-injector>=4.49.1",
     "fastapi>=0.141.1",
     "pillow>=12.3.0",
+    "psycopg2-binary>=2.9.12",
     "pwdlib[argon2]>=0.3.0",
-    "pydantic>=2.13.4",
+    "pydantic[email]>=2.13.4",
+    "pyjwt>=2.13.0",
+    "python-dotenv>=1.2.2",
+    "redis>=8.1.0",
     "sqlalchemy>=2.0.51",
+    "sqlalchemy-file>=0.6.0",
+    "uvicorn>=0.52.1",
 ]
