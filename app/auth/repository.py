@@ -1,26 +1,26 @@
 import uuid
-import redis
+import redis.asyncio as redis
 from .models import RefreshToken
 from .schemas import UserRegisterSchema
 from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
 from app.users.models import User
 from app.shared.config import REDIS_HOST, REDIS_PORT, REDIS_DB
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
 
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT,db=REDIS_DB, decode_responses=True)
+redis_client_default = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
 
 class AuthRepository(IAuthRepository):
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    def get_user_by_email(self, email: str)-> User | None:
-        return self.db.scalar(select(User).where(User.email == email))
+    async def get_user_by_email(self, email: str)-> User | None:
+        return await self.db.scalar(select(User).where(User.email == email))
 
 
-    def create_user(self, user_data: UserRegisterSchema, hashed_password: str)-> User:
+    async def create_user(self, user_data: UserRegisterSchema, hashed_password: str)-> User:
         db_user = User(
             email=user_data.email,
             first_name=user_data.first_name,
@@ -29,12 +29,12 @@ class AuthRepository(IAuthRepository):
         )
 
         self.db.add(db_user)
-        self.db.commit()
-        self.db.refresh(db_user)
+        await self.db.commit()
+        await self.db.refresh(db_user)
         return db_user
 
-    def save_or_update_token(self, user_id:uuid.UUID, token: str) -> None:
-        existing_token = self.get_token_by_user_id(user_id)
+    async def save_or_update_token(self, user_id:uuid.UUID, token: str) -> None:
+        existing_token = await self.get_token_by_user_id(user_id)
         if existing_token:
             existing_token.token = token
         else:
@@ -43,43 +43,43 @@ class AuthRepository(IAuthRepository):
                 token=token,
             )
             self.db.add(refresh_token)
-        self.db.commit()
+        await self.db.commit()
 
-    def get_token_by_user_id(self, user_id: uuid.UUID)-> RefreshToken | None:
-        token = self.db.scalar(select(RefreshToken).where(RefreshToken.user_id == user_id))
+    async def get_token_by_user_id(self, user_id: uuid.UUID)-> RefreshToken | None:
+        token = await self.db.scalar(select(RefreshToken).where(RefreshToken.user_id == user_id))
         return token
 
-    def get_token(self, token: str) -> RefreshToken | None:
-        return self.db.scalar(select(RefreshToken).where(RefreshToken.token == token))
+    async def get_token(self, token: str) -> RefreshToken | None:
+        return await self.db.scalar(select(RefreshToken).where(RefreshToken.token == token))
 
-    def delete_token(self, token: RefreshToken) -> None:
-        self.db.delete(token)
-        self.db.commit()
+    async def delete_token(self, token: RefreshToken) -> None:
+        await self.db.delete(token)
+        await self.db.commit()
 
-    def delete_user_token_by_id(self, user_id: uuid.UUID) -> None:
-        token = self.get_token_by_user_id(user_id)
+    async def delete_user_token_by_id(self, user_id: uuid.UUID) -> None:
+        token = await self.get_token_by_user_id(user_id)
         if token is None:
             return
-        self.db.delete(token)
-        self.db.commit()
+        await self.db.delete(token)
+        await self.db.commit()
 
-    def update_password(self, user: User, hashed_password: str) -> None:
+    async def update_password(self, user: User, hashed_password: str) -> None:
         stmt = update(User).where(User.id==user.id).values(hashed_password=hashed_password)
-        self.db.execute(stmt)
-        self.db.commit()
+        await self.db.execute(stmt)
+        await self.db.commit()
 
 
 class RedisRepository(IRedisRepository):
-    def __init__(self, redis_client: redis.Redis = redis_client):
+    def __init__(self, redis_client: redis.Redis = redis_client_default):
         self.redis_client = redis_client
 
-    def save_code(self, email: str, code: str, expiration_time: int) -> None:
-        self.redis_client.set(f'reset:{email}', code, ex=expiration_time)
+    async def save_code(self, email: str, code: str, expiration_time: int) -> None:
+        await self.redis_client.set(f'reset:{email}', code, ex=expiration_time)
 
-    def get_code(self, email:str)-> str | None:
-        return self.redis_client.get(f'reset:{email}')
+    async def get_code(self, email:str)-> str | None:
+        return await self.redis_client.get(f'reset:{email}')
 
-    def delete_code(self, email: str) -> None:
-        self.redis_client.delete(f'reset:{email}')
+    async def delete_code(self, email: str) -> None:
+        await self.redis_client.delete(f'reset:{email}')
 
 
