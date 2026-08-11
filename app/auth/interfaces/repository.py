@@ -6,11 +6,15 @@ from app.auth.models import RefreshToken
 
 class IAuthRepository(ABC):
     @abstractmethod
+    async def get_user_by_id(self, user_id: uuid.UUID)-> User | None:
+        pass
+
+    @abstractmethod
     async def get_user_by_email(self, email: str)-> User | None:
         pass
 
     @abstractmethod
-    async def create_user(self, user_data: UserRegisterSchema, hashed_password: str)-> User | None:
+    async def create_user(self, db_user: User, hashed_password: str)-> User | None:
         pass
 
     @abstractmethod

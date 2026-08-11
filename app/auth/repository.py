@@ -3,7 +3,6 @@ import uuid
 import redis.asyncio as redis
 
 from .models import RefreshToken
-from .schemas import UserRegisterSchema
 from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
 from app.users.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,22 +13,20 @@ class AuthRepository(IAuthRepository):
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_user_by_id(self, user_id: uuid.UUID)-> User | None:
+        stmt = select(User).where(User.id==user_id)
+        return await self.db.scalar(stmt)
+
     async def get_user_by_email(self, email: str)-> User | None:
         return await self.db.scalar(select(User).where(User.email == email))
 
 
-    async def create_user(self, user_data: UserRegisterSchema, hashed_password: str)-> User:
-        db_user = User(
-            email=user_data.email,
-            first_name=user_data.first_name,
-            last_name=user_data.last_name,
-            hashed_password=hashed_password,
-        )
-
+    async def create_user(self, db_user: User, hashed_password: str)-> User:
         self.db.add(db_user)
         await self.db.commit()
         await self.db.refresh(db_user)
         return db_user
+
 
     async def save_or_update_token(self, user_id:uuid.UUID, token: str) -> None:
         existing_token = await self.get_token_by_user_id(user_id)

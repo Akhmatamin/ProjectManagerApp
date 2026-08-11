@@ -15,7 +15,7 @@ class IProjectRepository(ABC):
         pass
 
     @abstractmethod
-    async def save_project(self, *args):
+    async def save_project(self, new_project: Project):
         pass
 
     @abstractmethod

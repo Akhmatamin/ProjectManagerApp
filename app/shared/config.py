@@ -1,15 +1,42 @@
-import os
-from dotenv import load_dotenv
+from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+ENV_PATH = BASE_DIR / ".env"
 
 
-load_dotenv()
+class Settings(BaseSettings):
+    database_host: str
+    database_port: int = 5432
+    database_name: str
+    database_user: str
+    database_password: str
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_LIFETIME = int(os.getenv("ACCESS_TOKEN_LIFETIME", 30))
-REFRESH_TOKEN_LIFETIME = int(os.getenv("REFRESH_TOKEN_LIFETIME", 1))
-REDIS_HOST: str = "localhost"
-REDIS_PORT: int = 6379
-REDIS_DB: int = 0
-RESET_CODE_EXPIRE_SECONDS: int = 300
+    secret_key: str
+    algorithm: str
+    access_token_lifetime: int
+    refresh_token_lifetime: int
+
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    reset_code_expire_seconds: int = 300
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_PATH,
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
+    @property
+    def database_url(self)-> str:
+        return (
+            f"postgresql+asyncpg://"
+            f"{self.database_user}:{self.database_password}"
+            f"@{self.database_host}:{self.database_port}"
+            f"/{self.database_name}"
+        )
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

@@ -1,7 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
@@ -17,7 +15,6 @@ class UserSchemaMeta(BaseModel):
 class ProjectCreateSchema(BaseModel):
     name: str
     description: str
-    members_ids: list[uuid.UUID] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -42,12 +39,16 @@ class ProjectsListSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_serializer("created_at", "updated_at")
+    def serialize_date(self, date: datetime):
+        return date.strftime("%d-%m-%Y %H:%M:%S")
+
 
 class ProjectUpdateSchema(BaseModel):
     name: str | None = None
     description: str | None = None
-    members: list[uuid.UUID] | None = None
-    documents: list[uuid.UUID] | None = None
+    # members: list[uuid.UUID] | None = None
+    # documents: list[uuid.UUID] | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -70,6 +71,10 @@ class ProjectCreatedSchema(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_date(self, date: datetime):
+        return date.strftime("%d-%m-%Y %H:%M:%S")
 
 
 class ProjectDetailsSchema(ProjectCreatedSchema):

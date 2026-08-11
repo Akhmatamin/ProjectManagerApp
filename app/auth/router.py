@@ -4,7 +4,7 @@ from app.users.models import User
 from app.auth.interfaces.service import IAuthService
 from .schemas import (UserRegisterSchema, UserCreatedResponse,UserLoginSchema,
                       ChangePasswordSchema, RefreshTokenSchema, RequestResetCodeSchema, ResetPasswordSchema)
-from app.shared.security import get_current_user
+from app.shared.dependencies import get_current_user
 from app.shared.container import Container
 
 

@@ -5,8 +5,9 @@ from sqlalchemy_file import File as SQLFile
 from app.projects.interfaces.service import IProjectService, IDocumentService
 from app.projects.interfaces.repository import IProjectRepository, IDocumentRepository
 from app.projects.models import Project
-from app.projects.schemas import ProjectCreateSchema, ProjectUpdateSchema
-from app.projects.exceptions import (InvalidProjectMembers, ProjectNotFound,
+from app.users.models import User
+from app.projects.schemas import ProjectUpdateSchema
+from app.projects.exceptions import (ProjectNotFound,
                                      NotMemberOrNoProject, AccessDenied,
                                      DocumentNotFound, UserAlreadyMember, UserNotFound)
 
@@ -17,16 +18,9 @@ class ProjectService(IProjectService):
         self.project_repo = project_repo
 
 
-    async def create_project(self, project_data: ProjectCreateSchema, current_user: uuid.UUID):
-        members = list(set(project_data.members_ids) | {current_user})
-        all_members = await self.project_repo.get_members_by_id(members)
-        if len(all_members) != len(members):
-            raise InvalidProjectMembers()
-
-        new_project = await self.project_repo.save_project(
-            project_data.name, project_data.description, current_user, members, []
-        )
-        return await self.project_repo.get_project_by_id(new_project.id)
+    async def create_project(self, new_project: Project, current_user: User):
+        new_project.members.append(current_user)
+        return await self.project_repo.save_project(new_project)
 
 
     async def get_projects_with_access(self, user_id: uuid.UUID):
@@ -77,6 +71,7 @@ class DocumentService(IDocumentService):
     def __init__(self, document_repo: IDocumentRepository, project_repo: IProjectRepository):
         self.document_repo = document_repo
         self.project_repo = project_repo
+
 
     async def upload_document(self, upload_file, project_id: uuid.UUID, current_user_id: uuid.UUID):
         project = await self.project_repo.get_project_if_user_member(project_id, current_user_id)

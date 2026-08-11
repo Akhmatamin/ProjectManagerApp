@@ -9,9 +9,10 @@ from app.projects.interfaces.service import IProjectService, IDocumentService
 from app.projects.schemas import (ProjectCreateSchema, ProjectsListSchema,
                                   ProjectDetailsSchema, ProjectUpdateSchema,
                                   ProjectCreatedSchema, DocumentsListSchema, InviteMemberResponse)
-from app.shared.security import get_current_user
+from app.shared.dependencies import get_current_user
 from app.shared.container import Container
 from app.users.models import User
+from app.projects.models import Project
 
 
 projects_router = APIRouter(prefix="/projects", tags=["projects"])
@@ -24,8 +25,9 @@ async def create_project(project_data: ProjectCreateSchema,
                          current_user: User = Depends(get_current_user),
                          project_service: IProjectService = Depends(Provide[Container.project_service])):
 
-    result = await project_service.create_project(project_data, current_user.id)
-    return result
+    project = Project(**project_data.model_dump(), owner_id=current_user.id)
+    return await project_service.create_project(project, current_user)
+
 
 
 @projects_router.get("/", response_model=list[ProjectsListSchema], status_code=status.HTTP_200_OK)

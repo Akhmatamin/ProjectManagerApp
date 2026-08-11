@@ -1,11 +1,13 @@
 import uuid
 from abc import ABC, abstractmethod
-from app.projects.schemas import ProjectCreateSchema, ProjectUpdateSchema
+from app.projects.schemas import ProjectUpdateSchema
 from app.users.models import User
+from app.projects.models import Project
+
 
 class IProjectService(ABC):
     @abstractmethod
-    def create_project(self, project_data: ProjectCreateSchema, current_user: uuid.UUID):
+    def create_project(self, project: Project, current_user: User):
         pass
 
     @abstractmethod

@@ -10,21 +10,28 @@ from app.auth.interfaces.service import IAuthService
 from .utils import token_expired
 from app.shared.security import (get_password_hash, verify_password,
                                  create_access_token, create_refresh_token)
-from app.shared.config import RESET_CODE_EXPIRE_SECONDS
+from app.shared.config import Settings
 
 
 class AuthService(IAuthService):
-    def __init__(self, user_repo: IAuthRepository, redis_repo: IRedisRepository):
+    def __init__(self, user_repo: IAuthRepository, redis_repo: IRedisRepository, settings: Settings):
         self.user_repo = user_repo
         self.redis_repo = redis_repo
-
+        self.settings = settings
 
     async def register_user(self, user_data: UserRegisterSchema):
         user_exists = await self.user_repo.get_user_by_email(user_data.email)
         if user_exists:
             raise EmailAlreadyExists()
         hashed_password = await get_password_hash(user_data.password)
-        new_user = await self.user_repo.create_user(user_data, hashed_password)
+
+        db_user = User(
+            email=user_data.email,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            hashed_password=hashed_password,
+        )
+        new_user = await self.user_repo.create_user(db_user, hashed_password)
         return new_user
 
 
@@ -64,7 +71,7 @@ class AuthService(IAuthService):
             raise InvalidEmail()
 
         code = random.randint(1000, 9999)
-        await self.redis_repo.save_code(email, str(code), expiration_time=RESET_CODE_EXPIRE_SECONDS)
+        await self.redis_repo.save_code(email, str(code), expiration_time=self.settings.reset_code_expire_seconds)
 
         return {"message": f"Reset code sent to email. Reset code: {code}"}
 

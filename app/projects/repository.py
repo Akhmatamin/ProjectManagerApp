@@ -24,17 +24,21 @@ class ProjectRepository(IProjectRepository):
         return list(result.scalars().all())
 
 
-    async def save_project(self, name: str, description: str, owner_id: uuid.UUID, members: list[User], documents: list[Document]):
-        new_project = Project(
-            name=name,
-            description=description,
-            owner_id=owner_id,
-            members=members,
-            documents=documents,
-        )
+    async def save_project(self, new_project: Project):
         self.db.add(new_project)
         await self.db.commit()
-        return new_project
+        stmt = (
+            select(Project)
+            .where(Project.id == new_project.id)
+            .options(
+                selectinload(Project.owner),
+                selectinload(Project.members),
+                selectinload(Project.documents),
+            )
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one()
+
 
     async def get_project_by_id(self,project_id: uuid.UUID, load_documents: bool = False):
         options = [selectinload(Project.members)]
@@ -47,10 +51,11 @@ class ProjectRepository(IProjectRepository):
 
 
     async def get_user_projects_by_user_id(self, user_id: uuid.UUID):
-        stmt = select(Project).where(Project.members.any(User.id == user_id)).options(
+        stmt = (select(Project).where(Project.members.any(User.id == user_id)).options(
+            selectinload(Project.owner),
             selectinload(Project.documents),
             selectinload(Project.members),
-        )
+        ).execution_options(populate_existing=True))
         result = await self.db.execute(stmt)
         return list(result.scalars().unique().all())
 
@@ -60,7 +65,7 @@ class ProjectRepository(IProjectRepository):
                                      Project.members.any(User.id == user_id)).options(
             selectinload(Project.members),
             selectinload(Project.documents),
-        ))
+        ).execution_options(populate_existing=True))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -80,6 +85,7 @@ class ProjectRepository(IProjectRepository):
     async def delete_project_db(self, project: Project):
         await self.db.delete(project)
         await self.db.commit()
+
 
     # async def get_project_member_by_id(self, project_id: uuid.UUID, member_id: uuid.UUID):
     #     stmt = select(User).where(User.id == member_id, User.members_projects.any(Project.id == project_id))
