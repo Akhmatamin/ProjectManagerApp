@@ -24,6 +24,10 @@ class IProjectService(ABC):
     def delete_project(self, project_id: uuid.UUID, current_user: uuid.UUID):
         pass
 
+    @abstractmethod
+    async def invite_member(self, user_id: uuid.UUID, member_email: str, current_user: uuid.UUID):
+        pass
+
 
 class IDocumentService(ABC):
     @abstractmethod

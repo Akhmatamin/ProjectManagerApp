@@ -1,10 +1,11 @@
 from dependency_injector import containers, providers
+import redis.asyncio as redis
 from app.shared.db.database import get_db_session
-from app.auth.repository import AuthRepository, RedisRepository, redis_client_default
+from app.auth.repository import AuthRepository, RedisRepository
+from app.shared.config import REDIS_HOST, REDIS_PORT, REDIS_DB
 from app.auth.service import AuthService
 from app.projects.repository import ProjectRepository, DocumentRepository
 from app.projects.service import ProjectService, DocumentService
-
 
 class Container(containers.DeclarativeContainer):
 
@@ -15,9 +16,10 @@ class Container(containers.DeclarativeContainer):
         ]
     )
     db_session = providers.Resource(get_db_session)
+    redis_client = providers.Singleton(redis.Redis, host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
     auth_repository = providers.Factory(AuthRepository, db=db_session)
-    redis_repository_auth = providers.Factory(RedisRepository, redis_client=providers.Object(redis_client_default))
+    redis_repository_auth = providers.Factory(RedisRepository, redis_client=redis_client)
 
     auth_service = providers.Factory(AuthService, user_repo=auth_repository, redis_repo=redis_repository_auth)
 

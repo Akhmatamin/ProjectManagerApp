@@ -2,7 +2,7 @@ import uuid
 from abc import ABC, abstractmethod
 
 from app.projects.models import Project, Document
-from app.projects.schemas import (ProjectCreateSchema, ProjectUpdateSchema)
+from app.projects.schemas import (ProjectUpdateSchema)
 
 
 class IProjectRepository(ABC):
@@ -33,6 +33,19 @@ class IProjectRepository(ABC):
     @abstractmethod
     async def delete_project_db(self, project: Project):
         pass
+
+    @abstractmethod
+    async def save_members(self, project_id: uuid.UUID, member_id: uuid.UUID):
+        pass
+
+    @abstractmethod
+    async def get_user_by_email(self, email: str):
+        pass
+
+    # @abstractmethod
+    # async def get_project_member_by_id(self, project_id: uuid.UUID, member_id: uuid.UUID):
+    #     pass
+
 
 
 class IDocumentRepository(ABC):

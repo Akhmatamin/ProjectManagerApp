@@ -12,6 +12,12 @@ class ProjectRepository(IProjectRepository):
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_user_by_email(self, email: str):
+        stmt = select(User).where(User.email == email)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+
     async def get_members_by_id(self, user_ids: list[uuid.UUID]):
         stmt = select(User).where(User.id.in_(user_ids))
         result = await self.db.execute(stmt)
@@ -30,10 +36,12 @@ class ProjectRepository(IProjectRepository):
         await self.db.commit()
         return new_project
 
-    async def get_project_by_id(self, project_id: uuid.UUID):
-        stmt = select(Project).where(Project.id == project_id).options(
-            selectinload(Project.members),
-            selectinload(Project.documents),)
+    async def get_project_by_id(self,project_id: uuid.UUID, load_documents: bool = False):
+        options = [selectinload(Project.members)]
+        if load_documents:
+            options.append(selectinload(Project.documents))
+
+        stmt = select(Project).where(Project.id == project_id).options(*options)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -72,6 +80,18 @@ class ProjectRepository(IProjectRepository):
     async def delete_project_db(self, project: Project):
         await self.db.delete(project)
         await self.db.commit()
+
+    # async def get_project_member_by_id(self, project_id: uuid.UUID, member_id: uuid.UUID):
+    #     stmt = select(User).where(User.id == member_id, User.members_projects.any(Project.id == project_id))
+    #     result = await self.db.execute(stmt)
+    #     return result.scalar_one_or_none()
+
+
+    async def save_members(self, project, member):
+        project.members.append(member)
+        await self.db.commit()
+        await self.db.refresh(project)
+        return project
 
 
 class DocumentRepository(IDocumentRepository):

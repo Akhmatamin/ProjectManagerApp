@@ -8,7 +8,7 @@ from typing import List
 from app.projects.interfaces.service import IProjectService, IDocumentService
 from app.projects.schemas import (ProjectCreateSchema, ProjectsListSchema,
                                   ProjectDetailsSchema, ProjectUpdateSchema,
-                                  ProjectCreatedSchema, DocumentsListSchema)
+                                  ProjectCreatedSchema, DocumentsListSchema, InviteMemberResponse)
 from app.shared.security import get_current_user
 from app.shared.container import Container
 from app.users.models import User
@@ -54,6 +54,17 @@ async def delete_project(project_id: uuid.UUID,
                          current_user: User = Depends(get_current_user),
                          project_service: IProjectService = Depends(Provide[Container.project_service])):
     return await project_service.delete_project(project_id, current_user.id)
+
+
+@project_router.post("/{project_id}/invite", response_model=InviteMemberResponse, status_code=status.HTTP_202_ACCEPTED)
+@inject
+async def invite_member(project_id: uuid.UUID,
+                        user: str,
+                        current_user: User = Depends(get_current_user),
+                        project_service: IProjectService = Depends(Provide[Container.project_service])):
+
+    return await project_service.invite_member(project_id, user, current_user.id)
+
 
 @project_router.post("/{project_id}/documents", response_model=dict, status_code=status.HTTP_201_CREATED)
 @inject
@@ -104,3 +115,5 @@ async def delete_document(document_id: uuid.UUID,
                           current_user: User = Depends(get_current_user),
                           document_service: IDocumentService = Depends(Provide[Container.document_service])):
     return await document_service.delete_document(document_id, current_user.id)
+
+

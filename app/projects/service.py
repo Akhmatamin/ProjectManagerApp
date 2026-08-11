@@ -4,10 +4,11 @@ from fastapi import UploadFile
 from sqlalchemy_file import File as SQLFile
 from app.projects.interfaces.service import IProjectService, IDocumentService
 from app.projects.interfaces.repository import IProjectRepository, IDocumentRepository
+from app.projects.models import Project
 from app.projects.schemas import ProjectCreateSchema, ProjectUpdateSchema
 from app.projects.exceptions import (InvalidProjectMembers, ProjectNotFound,
                                      NotMemberOrNoProject, AccessDenied,
-                                     DocumentNotFound)
+                                     DocumentNotFound, UserAlreadyMember, UserNotFound)
 
 
 
@@ -53,6 +54,24 @@ class ProjectService(IProjectService):
 
         await self.project_repo.delete_project_db(project)
         return {"message": "Project deleted successfully"}
+
+    async def invite_member(self, project_id: uuid.UUID, member_email: str, current_user: uuid.UUID):
+        project = await self.project_repo.get_project_by_id(project_id)
+        if not project or current_user != project.owner_id:
+            raise NotMemberOrNoProject()
+
+        member = await self.project_repo.get_user_by_email(member_email)
+        if not member:
+            raise UserNotFound()
+
+        if member in project.members:
+            raise UserAlreadyMember()
+
+        result = await self.project_repo.save_members(project, member)
+        return {"message": "Member invited successfully",
+                "project": result}
+
+
 
 class DocumentService(IDocumentService):
     def __init__(self, document_repo: IDocumentRepository, project_repo: IProjectRepository):
@@ -122,4 +141,3 @@ class DocumentService(IDocumentService):
 
         return {"message": "Document deleted successfully"}
 
-    
