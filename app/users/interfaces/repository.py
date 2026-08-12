@@ -1,13 +1,13 @@
-# from abc import ABC, abstractmethod
-# from typing import Optional
-# from app.users.models import User
-# from app.users.schemas import UserRegisterSchema
-#
-# class IUserRepository(ABC):
-#     @abstractmethod
-#     def get_user_by_email(self, email: str)-> type[User] | None:
-#         pass
-#
-#     @abstractmethod
-#     def create_user(self, user_data: UserRegisterSchema, hashed_password: str)-> Optional[User]:
-#         pass
+import uuid
+from abc import ABC, abstractmethod
+from app.users.models import User
+
+
+class IUserRepository(ABC):
+    @abstractmethod
+    async def get_by_email(self, email: str) -> User | None:
+        pass
+
+    @abstractmethod
+    async def get_by_ids(self, user_ids: list[uuid.UUID]) -> list[User]:
+        pass

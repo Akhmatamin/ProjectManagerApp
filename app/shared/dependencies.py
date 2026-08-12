@@ -3,19 +3,20 @@ import uuid
 from dependency_injector.wiring import inject, Provide
 from fastapi import Depends, HTTPException, status
 from app.auth.interfaces.repository import IAuthRepository
+from app.shared.config import Settings
 from app.shared.container import Container
-from app.shared.config import get_settings
 from app.users.models import User
 from jwt.exceptions import InvalidTokenError
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-settings = get_settings()
+
 token_security = HTTPBearer()
 
 
 @inject
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(token_security),
-                           auth_repo: IAuthRepository = Depends(Provide[Container.auth_repository])) -> User:
+                           auth_repo: IAuthRepository = Depends(Provide[Container.auth_repository]),
+                           settings: Settings = Depends(Provide[Container.config])) -> User:
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

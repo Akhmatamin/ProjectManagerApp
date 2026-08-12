@@ -4,6 +4,7 @@ from app.shared.db.database import get_db_session
 from app.auth.repository import AuthRepository, RedisRepository
 from app.shared.config import get_settings
 from app.auth.service import AuthService
+from app.users.repository import UserRepository
 from app.projects.repository import ProjectRepository, DocumentRepository
 from app.projects.service import ProjectService, DocumentService
 
@@ -30,7 +31,8 @@ class Container(containers.DeclarativeContainer):
                                      redis_repo=redis_repository_auth, settings=config.provided)
 
     project_repository = providers.Factory(ProjectRepository, db=db_session)
-    project_service = providers.Factory(ProjectService, project_repo=project_repository)
+    user_repository = providers.Factory(UserRepository, db=db_session)
+    project_service = providers.Factory(ProjectService, project_repo=project_repository, user_repo=user_repository)
 
     document_repository = providers.Factory(DocumentRepository, db=db_session)
     document_service = providers.Factory(DocumentService, document_repo=document_repository,

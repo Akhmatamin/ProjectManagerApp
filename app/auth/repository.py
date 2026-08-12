@@ -40,9 +40,11 @@ class AuthRepository(IAuthRepository):
             self.db.add(refresh_token)
         await self.db.commit()
 
+
     async def get_token_by_user_id(self, user_id: uuid.UUID)-> RefreshToken | None:
         token = await self.db.scalar(select(RefreshToken).where(RefreshToken.user_id == user_id))
         return token
+
 
     async def get_token(self, token: str) -> RefreshToken | None:
         return await self.db.scalar(select(RefreshToken).where(RefreshToken.token == token))
@@ -51,6 +53,7 @@ class AuthRepository(IAuthRepository):
         await self.db.delete(token)
         await self.db.commit()
 
+
     async def delete_user_token_by_id(self, user_id: uuid.UUID) -> None:
         token = await self.get_token_by_user_id(user_id)
         if token is None:
@@ -58,10 +61,12 @@ class AuthRepository(IAuthRepository):
         await self.db.delete(token)
         await self.db.commit()
 
+
     async def update_password(self, user: User, hashed_password: str) -> None:
         stmt = update(User).where(User.id==user.id).values(hashed_password=hashed_password)
         await self.db.execute(stmt)
         await self.db.commit()
+
 
 
 class RedisRepository(IRedisRepository):

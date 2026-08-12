@@ -12,19 +12,8 @@ class ProjectRepository(IProjectRepository):
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_user_by_email(self, email: str):
-        stmt = select(User).where(User.email == email)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
 
-
-    async def get_members_by_id(self, user_ids: list[uuid.UUID]):
-        stmt = select(User).where(User.id.in_(user_ids))
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
-
-
-    async def save_project(self, new_project: Project):
+    async def save(self, new_project: Project):
         self.db.add(new_project)
         await self.db.commit()
         stmt = (
@@ -40,7 +29,7 @@ class ProjectRepository(IProjectRepository):
         return result.scalar_one()
 
 
-    async def get_project_by_id(self,project_id: uuid.UUID, load_documents: bool = False):
+    async def get_by_id(self,project_id: uuid.UUID, load_documents: bool = False):
         options = [selectinload(Project.members)]
         if load_documents:
             options.append(selectinload(Project.documents))
@@ -50,7 +39,7 @@ class ProjectRepository(IProjectRepository):
         return result.scalar_one_or_none()
 
 
-    async def get_user_projects_by_user_id(self, user_id: uuid.UUID):
+    async def get_by_user_id(self, user_id: uuid.UUID):
         stmt = (select(Project).where(Project.members.any(User.id == user_id)).options(
             selectinload(Project.owner),
             selectinload(Project.documents),
@@ -60,7 +49,7 @@ class ProjectRepository(IProjectRepository):
         return list(result.scalars().unique().all())
 
 
-    async def get_project_if_user_member(self, project_id: uuid.UUID, user_id: uuid.UUID):
+    async def get_if_user_member(self, project_id: uuid.UUID, user_id: uuid.UUID):
         stmt = (select(Project).where(Project.id == project_id,
                                      Project.members.any(User.id == user_id)).options(
             selectinload(Project.members),
@@ -69,8 +58,8 @@ class ProjectRepository(IProjectRepository):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update_project(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, user_id: uuid.UUID):
-        project = await self.get_project_if_user_member(project_id, user_id)
+    async def update(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, user_id: uuid.UUID):
+        project = await self.get_if_user_member(project_id, user_id)
         if not project:
             return None
 
@@ -82,18 +71,12 @@ class ProjectRepository(IProjectRepository):
         return project
 
 
-    async def delete_project_db(self, project: Project):
+    async def delete(self, project: Project):
         await self.db.delete(project)
         await self.db.commit()
 
 
-    # async def get_project_member_by_id(self, project_id: uuid.UUID, member_id: uuid.UUID):
-    #     stmt = select(User).where(User.id == member_id, User.members_projects.any(Project.id == project_id))
-    #     result = await self.db.execute(stmt)
-    #     return result.scalar_one_or_none()
-
-
-    async def save_members(self, project, member):
+    async def save_members(self, project: Project, member: User):
         project.members.append(member)
         await self.db.commit()
         await self.db.refresh(project)
@@ -104,34 +87,29 @@ class DocumentRepository(IDocumentRepository):
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def save_document(self, file_attached, project_id: uuid.UUID):
-        new_document = Document(
-            file=file_attached,
-            project_id=project_id,
-        )
+    async def save(self, new_document: Document):
         self.db.add(new_document)
         await self.db.commit()
         await self.db.refresh(new_document)
         return new_document
 
-    async def get_documents(self, project_id: uuid.UUID):
+    async def get_by_project_id(self, project_id: uuid.UUID):
         stmt = select(Document).where(Document.project_id == project_id)
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def get_document_by_id(self, document_id: uuid.UUID):
+    async def get_by_id(self, document_id: uuid.UUID):
         stmt = select(Document).where(Document.id == document_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update_document_db(self, document: Document, new_file_attached):
-        document.file = new_file_attached
 
+    async def update(self, document: Document) -> Document:
         self.db.add(document)
         await self.db.commit()
         await self.db.refresh(document)
         return document
 
-    async def delete_document_db(self, document: Document):
+    async def delete(self, document: Document):
         await self.db.delete(document)
         await self.db.commit()

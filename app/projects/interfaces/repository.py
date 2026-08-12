@@ -3,68 +3,56 @@ from abc import ABC, abstractmethod
 
 from app.projects.models import Project, Document
 from app.projects.schemas import (ProjectUpdateSchema)
+from app.users.models import User
 
 
 class IProjectRepository(ABC):
     @abstractmethod
-    async def get_project_by_id(self, project_id: uuid.UUID):
+    async def get_by_id(self, project_id: uuid.UUID, load_documents: bool = False):
         pass
 
     @abstractmethod
-    async def get_members_by_id(self, user_ids: list[uuid.UUID]):
+    async def save(self, new_project: Project):
         pass
 
     @abstractmethod
-    async def save_project(self, new_project: Project):
+    async def get_by_user_id(self, user_id: uuid.UUID):
         pass
 
     @abstractmethod
-    async def get_user_projects_by_user_id(self, user_id: uuid.UUID):
+    async def get_if_user_member(self, project_id: uuid.UUID, user_id: uuid.UUID):
         pass
 
     @abstractmethod
-    async def get_project_if_user_member(self, project_id: uuid.UUID, user_id: uuid.UUID):
+    async def update(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, user_id: uuid.UUID):
         pass
 
     @abstractmethod
-    async def update_project(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, user_id: uuid.UUID):
+    async def delete(self, project: Project):
         pass
 
     @abstractmethod
-    async def delete_project_db(self, project: Project):
+    async def save_members(self, project: Project, member: User):
         pass
-
-    @abstractmethod
-    async def save_members(self, project_id: uuid.UUID, member_id: uuid.UUID):
-        pass
-
-    @abstractmethod
-    async def get_user_by_email(self, email: str):
-        pass
-
-    # @abstractmethod
-    # async def get_project_member_by_id(self, project_id: uuid.UUID, member_id: uuid.UUID):
-    #     pass
-
 
 
 class IDocumentRepository(ABC):
     @abstractmethod
-    async def save_document(self, *args):
+    async def save(self, *args):
         pass
 
     @abstractmethod
-    async def get_documents(self, project_id: uuid.UUID):
+    async def get_by_project_id(self, project_id: uuid.UUID):
         pass
 
     @abstractmethod
-    async def get_document_by_id(self, document_id: uuid.UUID):
+    async def get_by_id(self, document_id: uuid.UUID):
         pass
 
     @abstractmethod
-    async def update_document_db(self, document, new_file_attached):
+    async def update(self, document: Document) -> Document:
         pass
 
     @abstractmethod
-    async def delete_document_db(self, document: Document):
+    async def delete(self, document: Document):
         pass
