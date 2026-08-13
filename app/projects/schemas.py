@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 
 class UserSchemaMeta(BaseModel):
@@ -26,13 +26,19 @@ class DocumentsListSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+def _extract_members(value):
+    if not isinstance(value, list):
+        return value
+    return [member.user if hasattr(member, "user") else member for member in value]
+
+
 class ProjectsListSchema(BaseModel):
     id: uuid.UUID = Field(serialization_alias='project_id')
     name: str
     description: str
     owner_id: uuid.UUID
     owner: UserSchemaMeta
-    members: list[UserSchemaMeta]
+    members: list[UserSchemaMeta] = Field(validation_alias="user_memberships")
     documents: list[DocumentsListSchema] = []
     created_at: datetime
     updated_at: datetime
@@ -42,6 +48,11 @@ class ProjectsListSchema(BaseModel):
     @field_serializer("created_at", "updated_at")
     def serialize_date(self, date: datetime):
         return date.strftime("%d-%m-%Y %H:%M:%S")
+
+    @field_validator("members", mode="before")
+    @classmethod
+    def parse_members_from_memberships(cls, value):
+        return _extract_members(value)
 
 
 class ProjectUpdateSchema(BaseModel):
@@ -65,7 +76,7 @@ class ProjectCreatedSchema(BaseModel):
     name: str
     description: str
     owner: UserSchemaMeta
-    members: list[UserSchemaMeta]
+    members: list[UserSchemaMeta] = Field(validation_alias="user_memberships")
     documents: list[DocumentsListSchema] = []
     created_at: datetime
     updated_at: datetime
@@ -75,6 +86,11 @@ class ProjectCreatedSchema(BaseModel):
     @field_serializer("created_at", "updated_at")
     def serialize_date(self, date: datetime):
         return date.strftime("%d-%m-%Y %H:%M:%S")
+
+    @field_validator("members", mode="before")
+    @classmethod
+    def parse_members_from_memberships(cls, value):
+        return _extract_members(value)
 
 
 class ProjectDetailsSchema(ProjectCreatedSchema):
@@ -97,7 +113,7 @@ class ProjectReadSchema(BaseModel):
     id: uuid.UUID
     description: str | None
     owner_id: uuid.UUID
-    members: list[UserSchemaMeta]
+    members: list[UserSchemaMeta] = Field(validation_alias="user_memberships")
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
@@ -106,8 +122,14 @@ class ProjectReadSchema(BaseModel):
     def serialize_date(self, date: datetime):
         return date.strftime("%d-%m-%Y %H:%M:%S")
 
+    @field_validator("members", mode="before")
+    @classmethod
+    def parse_members_from_memberships(cls, value):
+        return _extract_members(value)
+
 
 class InviteMemberResponse(BaseModel):
     message: str
-    project: ProjectReadSchema
+    project_id: uuid.UUID
+
 

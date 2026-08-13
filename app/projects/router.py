@@ -1,9 +1,10 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status, UploadFile, File
+from fastapi import APIRouter, Depends, status, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from urllib.parse import quote
 from typing import List
+from typing import Annotated
 from app.projects.interfaces.service import IProjectService, IDocumentService
 from app.projects.schemas import (ProjectCreateSchema, ProjectsListSchema,
                                   ProjectDetailsSchema, ProjectUpdateSchema,
@@ -11,12 +12,13 @@ from app.projects.schemas import (ProjectCreateSchema, ProjectsListSchema,
 
 from app.shared.dependencies import get_current_user, get_project_service, get_document_service
 from app.users.models import User
-from app.projects.models import Project
-
+from app.projects.models import Project, ProjectPermission
 
 projects_router = APIRouter(prefix="/projects", tags=["projects"])
 project_router = APIRouter(prefix="/project", tags=["project"])
 document_router = APIRouter(prefix="/document", tags=["documents"])
+
+
 
 @projects_router.post("/", response_model=ProjectCreatedSchema, status_code=status.HTTP_201_CREATED)
 async def create_project(project_data: ProjectCreateSchema,
@@ -28,15 +30,20 @@ async def create_project(project_data: ProjectCreateSchema,
 
 
 
+
 @projects_router.get("/", response_model=list[ProjectsListSchema], status_code=status.HTTP_200_OK)
 async def get_projects(current_user: User = Depends(get_current_user),
                        project_service: IProjectService = Depends(get_project_service)):
     return await project_service.get_projects_with_access(current_user.id)
 
+
+
 @project_router.get("/{project_id}/info", response_model=ProjectDetailsSchema, status_code=status.HTTP_200_OK)
 async def get_project_details(project_id: uuid.UUID, current_user: User = Depends(get_current_user),
                               project_service: IProjectService = Depends(get_project_service)):
     return await project_service.get_project_details(project_id, current_user.id)
+
+
 
 @project_router.put("/{project_id}/info", response_model=ProjectDetailsSchema, status_code=status.HTTP_202_ACCEPTED)
 async def update_project_details(project_id: uuid.UUID,
@@ -45,6 +52,8 @@ async def update_project_details(project_id: uuid.UUID,
                                  project_service: IProjectService = Depends(get_project_service)):
     return await project_service.update_project_details(project_id, project_data, current_user.id)
 
+
+
 @project_router.delete("/{project_id}", status_code=status.HTTP_202_ACCEPTED)
 async def delete_project(project_id: uuid.UUID,
                          current_user: User = Depends(get_current_user),
@@ -52,13 +61,36 @@ async def delete_project(project_id: uuid.UUID,
     return await project_service.delete_project(project_id, current_user.id)
 
 
+
 @project_router.post("/{project_id}/invite", response_model=InviteMemberResponse, status_code=status.HTTP_202_ACCEPTED)
 async def invite_member(project_id: uuid.UUID,
-                        user: str,
+                        user: Annotated[str, Query(description="User to invite")],
+                        permission: Annotated[ProjectPermission, Query(
+                        description="Permission for the invited user",)],
                         current_user: User = Depends(get_current_user),
                         project_service: IProjectService = Depends(get_project_service)):
 
-    return await project_service.invite_member(project_id, user, current_user.id)
+    return await project_service.invite_member(project_id, user, current_user.id, permission)
+
+
+
+@project_router.get("/{project_id}/share", status_code=status.HTTP_200_OK)
+async def share_project(project_id: uuid.UUID, email: Annotated[str, Query(description="Email to share")],
+                        permission: Annotated[ProjectPermission, Query(description="Permission for the shared user",)],
+                        current_user: User = Depends(get_current_user),
+                        project_service: IProjectService = Depends(get_project_service)):
+
+    return await project_service.share_project_link(project_id, email, current_user.id, permission)
+
+
+@project_router.post('/join', status_code=status.HTTP_200_OK)
+async def join_project(token: Annotated[str, Query(description="Invite token")],
+                       current_user: User = Depends(get_current_user),
+                       project_service: IProjectService = Depends(get_project_service)):
+
+    return await project_service.join_project_by_token(token, current_user.id)
+
+
 
 
 @project_router.post("/{project_id}/documents", response_model=dict, status_code=status.HTTP_201_CREATED)

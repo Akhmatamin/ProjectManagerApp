@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 from app.projects.schemas import ProjectUpdateSchema
-from app.projects.models import Project
+from app.projects.models import Project, ProjectPermission
 
 
 class IProjectService(ABC):
@@ -26,8 +26,17 @@ class IProjectService(ABC):
         pass
 
     @abstractmethod
-    async def invite_member(self, user_id: uuid.UUID, member_email: str, current_user: uuid.UUID):
+    async def invite_member(self, project_id: uuid.UUID, member_email: str, current_user: uuid.UUID,
+                            permission: ProjectPermission):
         pass # Use with email
+    @abstractmethod
+    async def share_project_link(self, project_id: uuid.UUID, email: str,current_user: uuid.UUID,
+                                 permission: ProjectPermission):
+        pass
+
+    @abstractmethod
+    async def join_project_by_token(self, token: str, current_user: uuid.UUID):
+        pass
 
 
 class IDocumentService(ABC):

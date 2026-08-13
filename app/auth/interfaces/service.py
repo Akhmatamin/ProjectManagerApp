@@ -36,3 +36,8 @@ class IEmailService(ABC):
     @abstractmethod
     async def send_reset_code(self, email: str, code: str):
         pass
+
+    @abstractmethod
+    async def send_project_invite(self, email: str, project_name: str,
+                                  join_link:str, permission: str):
+        pass  # come back and review here again

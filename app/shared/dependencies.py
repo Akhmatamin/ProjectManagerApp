@@ -29,11 +29,17 @@ def get_project_service(
         db: AsyncSession = Depends(get_db_session),
         project_repo_factory = Depends(Provide[Container.project_repository.provider]),
         user_repo_factory = Depends(Provide[Container.user_repository.provider]),
-        project_service_factory = Depends(Provide[Container.project_service.provider])) -> IProjectService:
+        project_service_factory = Depends(Provide[Container.project_service.provider]),
+        invite_repo_factory = Depends(Provide[Container.project_invite_repository.provider]),
+        email_service = Depends(Provide[Container.email_service]),
+        settings: Settings = Depends(Provide[Container.config])) -> IProjectService:
 
     project_repo = project_repo_factory(db=db)
     user_repo = user_repo_factory(db=db)
-    return project_service_factory(project_repo=project_repo, user_repo=user_repo)
+    invite_repo = invite_repo_factory()
+    return project_service_factory(project_repo=project_repo, user_repo=user_repo,
+                                   invite_repo=invite_repo, email_service=email_service,
+                                   settings=settings)
 
 
 @inject
