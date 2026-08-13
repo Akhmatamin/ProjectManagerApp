@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 import app.models  # noqa: F401
 from app.auth.router import auth_router
 from app.shared.container import Container
@@ -14,6 +14,7 @@ def create_app():
     app = FastAPI(title="Project Manager API", lifespan=lifespan)
     app.state.container = container
     app.add_exception_handler(BaseAppException, base_app_exception_handler)
+
     app.include_router(auth_router)
     app.include_router(projects_router)
     app.include_router(project_router)

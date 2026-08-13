@@ -14,19 +14,17 @@ class ProjectRepository(IProjectRepository):
 
 
     async def save(self, new_project: Project):
-        self.db.add(new_project)
-        await self.db.commit()
-        stmt = (
-            select(Project)
-            .where(Project.id == new_project.id)
-            .options(
-                selectinload(Project.owner),
-                selectinload(Project.members),
-                selectinload(Project.documents),
+        try:
+            self.db.add(new_project)
+            await self.db.commit()
+            await self.db.refresh(
+                new_project,
+                attribute_names=["owner", "members", "documents"]
             )
-        )
-        result = await self.db.execute(stmt)
-        return result.scalar_one()
+            return new_project
+        except Exception:
+            await self.db.rollback()
+            raise
 
 
     async def get_by_id(self,project_id: uuid.UUID, load_documents: bool = False):

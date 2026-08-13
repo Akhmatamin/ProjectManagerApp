@@ -1,12 +1,12 @@
-from dependency_injector import containers, providers
 import redis.asyncio as redis
-from app.shared.db.database import get_db_session
+from dependency_injector import containers, providers
 from app.auth.repository import AuthRepository, RedisRepository
+from app.auth.service import AuthService, EmailService
+from app.projects.repository import DocumentRepository, ProjectRepository
+from app.projects.service import DocumentService, ProjectService
 from app.shared.config import get_settings
-from app.auth.service import AuthService
 from app.users.repository import UserRepository
-from app.projects.repository import ProjectRepository, DocumentRepository
-from app.projects.service import ProjectService, DocumentService
+
 
 class Container(containers.DeclarativeContainer):
 
@@ -14,26 +14,34 @@ class Container(containers.DeclarativeContainer):
         modules=[
             'app.auth.router',
             'app.projects.router',
-            'app.shared.dependencies'
+            'app.shared.dependencies',
         ]
     )
     config = providers.Singleton(get_settings)
 
-    db_session = providers.Resource(get_db_session)
-    redis_client = providers.Singleton(redis.Redis, host=config.provided.redis_host,
-                                       port=config.provided.redis_port,
-                                       db=config.provided.redis_db, decode_responses=True)
+    redis_client = providers.Singleton(
+        redis.Redis,
+        host=config.provided.redis_host,
+        port=config.provided.redis_port,
+        db=config.provided.redis_db,
+        decode_responses=True,
+    )
 
-    auth_repository = providers.Factory(AuthRepository, db=db_session)
-    redis_repository_auth = providers.Factory(RedisRepository, redis_client=redis_client)
+    auth_repository = providers.Factory(AuthRepository)
+    user_repository = providers.Factory(UserRepository)
+    project_repository = providers.Factory(ProjectRepository)
+    document_repository = providers.Factory(DocumentRepository)
 
-    auth_service = providers.Factory(AuthService, user_repo=auth_repository,
-                                     redis_repo=redis_repository_auth, settings=config.provided)
+    redis_repository_auth = providers.Factory(
+        RedisRepository, redis_client=redis_client
+    )
 
-    project_repository = providers.Factory(ProjectRepository, db=db_session)
-    user_repository = providers.Factory(UserRepository, db=db_session)
-    project_service = providers.Factory(ProjectService, project_repo=project_repository, user_repo=user_repository)
-
-    document_repository = providers.Factory(DocumentRepository, db=db_session)
-    document_service = providers.Factory(DocumentService, document_repo=document_repository,
-                                         project_repo=project_repository)
+    email_service = providers.Singleton(EmailService, settings=config)
+    auth_service = providers.Factory(
+        AuthService,
+        redis_repo=redis_repository_auth,
+        settings=config,
+        email_service=email_service
+    )
+    project_service = providers.Factory(ProjectService)
+    document_service = providers.Factory(DocumentService)

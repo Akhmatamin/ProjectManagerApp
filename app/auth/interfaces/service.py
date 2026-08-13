@@ -31,3 +31,8 @@ class IAuthService(ABC):
     @abstractmethod
     async def reset_password(self, email: str, code: str, new_password: str):
         pass
+
+class IEmailService(ABC):
+    @abstractmethod
+    async def send_reset_code(self, email: str, code: str):
+        pass

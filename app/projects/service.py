@@ -6,7 +6,6 @@ from app.projects.interfaces.service import IProjectService, IDocumentService
 from app.projects.interfaces.repository import IProjectRepository, IDocumentRepository
 from app.users.interfaces.repository import IUserRepository
 from app.projects.models import Project, Document
-from app.users.models import User
 from app.projects.schemas import ProjectUpdateSchema
 from app.projects.exceptions import (ProjectNotFound,
                                      NotMemberOrNoProject, AccessDenied,
@@ -20,8 +19,11 @@ class ProjectService(IProjectService):
         self.user_repo = user_repo
 
 
-    async def create_project(self, new_project: Project, current_user: User):
-        new_project.members.append(current_user)
+    async def create_project(self, new_project: Project, current_user_id: uuid.UUID):
+        user = await self.user_repo.get_by_id(current_user_id)
+        if not user:
+            raise UserNotFound()
+        new_project.members.append(user)
         return await self.project_repo.save(new_project)
 
 

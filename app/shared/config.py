@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     redis_db: int = 0
     reset_code_expire_seconds: int = 300
 
+    resend_api_key: str
+    resend_from: str = 'onboarding@resend.dev'
+
     model_config = SettingsConfigDict(
         env_file=ENV_PATH,
         env_file_encoding="utf-8",

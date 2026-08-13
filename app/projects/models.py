@@ -30,14 +30,13 @@ class Project(Base):
 
     members: Mapped[List['User']] = relationship('User', secondary='project_members', back_populates="members_projects")
     documents: Mapped[List['Document']] = relationship('Document', back_populates="project_document",
-                                                       cascade="all, delete-orphan")
+                                                       cascade="all, delete-orphan") # review this
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                   default=lambda: datetime.now(timezone.utc),
                                                   onupdate=lambda: datetime.now(timezone.utc))
-
 
 class Document(Base):
     __tablename__ = "documents"

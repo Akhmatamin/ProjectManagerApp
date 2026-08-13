@@ -1,23 +1,44 @@
 import uuid
 import random
+import resend, asyncio
 from .exceptions import (EmailAlreadyExists, InvalidCredentials,
                          InvalidRefreshToken, ExpiredRefreshToken, InvalidPassword,
                          InvalidEmail, InvalidResetCode)
 from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
 from .schemas import UserRegisterSchema, UserLoginSchema, ChangePasswordSchema
 from app.users.models import User
-from app.auth.interfaces.service import IAuthService
+from app.auth.interfaces.service import IAuthService, IEmailService
 from .utils import token_expired
 from app.shared.security import (get_password_hash, verify_password,
                                  create_access_token, create_refresh_token)
 from app.shared.config import Settings
 
 
+
+class EmailService(IEmailService):
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        resend.api_key=self.settings.resend_api_key
+
+    async def send_reset_code(self, email: str, code: str):
+        params = {
+                "from": self.settings.resend_from,
+                "to": [email],
+                "subject": "Verification code",
+                "html": f"<p>Your verification code is: <strong>{code}</strong></p>"
+            }
+        return await asyncio.to_thread(resend.Emails.send, params) # type: ignore
+
+
+
+
 class AuthService(IAuthService):
-    def __init__(self, user_repo: IAuthRepository, redis_repo: IRedisRepository, settings: Settings):
+    def __init__(self, user_repo: IAuthRepository, redis_repo: IRedisRepository,
+                 settings: Settings, email_service: IEmailService):
         self.user_repo = user_repo
         self.redis_repo = redis_repo
         self.settings = settings
+        self.email_service = email_service
 
     async def register_user(self, user_data: UserRegisterSchema):
         user_exists = await self.user_repo.get_user_by_email(user_data.email)
@@ -71,12 +92,14 @@ class AuthService(IAuthService):
             raise InvalidEmail()
 
         code = random.randint(1000, 9999)
+        await self.email_service.send_reset_code(email, str(code))
         await self.redis_repo.save_code(email, str(code), expiration_time=self.settings.reset_code_expire_seconds)
 
         return {"message": f"Reset code sent to email. Reset code: {code}"}
 
     async def reset_password(self, email: str, code: str, new_password: str):
         stored_code = await self.redis_repo.get_code(email)
+        print(f"From redis: {stored_code}, From client: {code}")
         if not stored_code or stored_code != code:
             raise InvalidResetCode()
 
@@ -108,5 +131,4 @@ class AuthService(IAuthService):
             raise ExpiredRefreshToken()
 
         return stored_token
-
 

@@ -1,39 +1,38 @@
 import uuid
 from abc import ABC, abstractmethod
 from app.projects.schemas import ProjectUpdateSchema
-from app.users.models import User
 from app.projects.models import Project
 
 
 class IProjectService(ABC):
     @abstractmethod
-    def create_project(self, project: Project, current_user: User):
+    async def create_project(self, project: Project, current_user_id: uuid.UUID):
         pass
 
     @abstractmethod
-    def get_projects_with_access(self, user_id: uuid.UUID):
+    async def get_projects_with_access(self, user_id: uuid.UUID):
         pass
 
     @abstractmethod
-    def get_project_details(self, project_id: uuid.UUID, current_user: uuid.UUID):
+    async def get_project_details(self, project_id: uuid.UUID, current_user: uuid.UUID):
         pass
 
     @abstractmethod
-    def update_project_details(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, current_user: uuid.UUID):
+    async def update_project_details(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, current_user: uuid.UUID):
         pass
 
     @abstractmethod
-    def delete_project(self, project_id: uuid.UUID, current_user: uuid.UUID):
+    async def delete_project(self, project_id: uuid.UUID, current_user: uuid.UUID):
         pass
 
     @abstractmethod
     async def invite_member(self, user_id: uuid.UUID, member_email: str, current_user: uuid.UUID):
-        pass
+        pass # Use with email
 
 
 class IDocumentService(ABC):
     @abstractmethod
-    def upload_document(self, file, project_id: uuid.UUID, current_user_id: uuid.UUID):
+    async def upload_document(self, file, project_id: uuid.UUID, current_user_id: uuid.UUID):
         pass
 
     @abstractmethod

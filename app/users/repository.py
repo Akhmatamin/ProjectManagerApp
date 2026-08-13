@@ -18,3 +18,8 @@ class UserRepository(IUserRepository):
         stmt = select(User).where(User.id.in_(user_ids))
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
+        stmt = select(User).where(User.id == user_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
