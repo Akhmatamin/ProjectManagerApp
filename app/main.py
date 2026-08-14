@@ -19,10 +19,10 @@ def create_app():
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Разрешает запросы с любых фронтендов
+        allow_origins=["*"],
         allow_credentials=True,
-        allow_methods=["*"],  # Включая OPTIONS, POST, GET и т.д.
-        allow_headers=["*"],  # Включая Content-Type, Authorization и т.д.
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     app.include_router(auth_router)
