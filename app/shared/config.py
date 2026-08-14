@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     resend_from: str = 'onboarding@resend.dev'
 
     frontend_base_url : str = 'http://localhost:3000/index.html'
-    invite_link_expire_seconds: int = 43200 #12 hours
+    invite_link_expire_seconds: int = 260000 #3 days
     backend_base_url: str = 'http://127.0.0.1:8000'
 
 
