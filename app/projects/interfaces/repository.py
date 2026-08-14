@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from app.projects.models import Project, Document, ProjectMember, ProjectPermission
+from app.projects.models import Project, ProjectMember, ProjectPermission
 from app.projects.schemas import (ProjectUpdateSchema)
 
 
@@ -56,25 +56,3 @@ class IProjectInviteRepository(ABC):
     async def delete_invite_jti(self, jti: str):
         pass
 
-
-
-class IDocumentRepository(ABC):
-    @abstractmethod
-    async def save(self, *args):
-        pass
-
-    @abstractmethod
-    async def get_by_project_id(self, project_id: uuid.UUID):
-        pass
-
-    @abstractmethod
-    async def get_by_id(self, document_id: uuid.UUID):
-        pass
-
-    @abstractmethod
-    async def update(self, document: Document) -> Document:
-        pass
-
-    @abstractmethod
-    async def delete(self, document: Document):
-        pass

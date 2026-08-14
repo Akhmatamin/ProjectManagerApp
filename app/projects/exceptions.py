@@ -16,9 +16,6 @@ class AccessDenied(BaseAppException):
     def __init__(self, message:str = "Access denied"):
         super().__init__(message, status_code=403)
 
-class DocumentNotFound(BaseAppException):
-    def __init__(self, message:str = "Document not found"):
-        super().__init__(message, status_code=404)
 
 class UserAlreadyMember(BaseAppException):
     def __init__(self, message:str = "User already member of the project"):

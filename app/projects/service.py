@@ -1,20 +1,17 @@
 import uuid
 
-from fastapi import UploadFile
-from sqlalchemy_file import File as SQLFile
-
 from app.auth.interfaces.service import IEmailService
-from app.projects.interfaces.service import IProjectService, IDocumentService
-from app.projects.interfaces.repository import IProjectRepository, IDocumentRepository, IProjectInviteRepository
+from app.projects.interfaces.service import IProjectService
+from app.projects.interfaces.repository import IProjectRepository, IProjectInviteRepository
 from app.shared.config import Settings
 from app.shared.exceptions import InvalidLink
 from app.shared.security import create_invite_token, decode_invite_token
 from app.users.interfaces.repository import IUserRepository
-from app.projects.models import Project, Document, ProjectMember, ProjectPermission
+from app.projects.models import Project, ProjectMember, ProjectPermission
 from app.projects.schemas import ProjectUpdateSchema
 from app.projects.exceptions import (ProjectNotFound,
                                      NotMemberOrNoProject, AccessDenied,
-                                     DocumentNotFound, UserAlreadyMember, UserNotFound)
+                                     UserAlreadyMember, UserNotFound)
 
 
 
@@ -167,84 +164,3 @@ class ProjectService(IProjectService):
             "message": "You have successfully joined to project",
             "project_id": result.project_id,
         }
-
-
-
-class DocumentService(IDocumentService):
-    def __init__(self, document_repo: IDocumentRepository, project_repo: IProjectRepository):
-        self.document_repo = document_repo
-        self.project_repo = project_repo
-
-
-    async def upload_document(self, new_file, project_id: uuid.UUID, current_user_id: uuid.UUID):
-        project = await self.project_repo.get_if_user_member(project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
-
-        file_bytes = await new_file.read()
-
-        file_attached = SQLFile(
-            content=file_bytes,
-            filename=new_file.filename,
-            content_type=new_file.content_type,
-        )
-
-        new_document = Document(
-            file=file_attached,
-            project_id=project_id,
-        )
-
-        result_doc = await self.document_repo.save(new_document)
-        return {"message": "Document uploaded successfully",
-                "document_id": result_doc.id}
-
-    async def get_all_project_documents(self, project_id: uuid.UUID, current_user_id: uuid.UUID):
-        project = await self.project_repo.get_if_user_member(project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
-
-        return await self.document_repo.get_by_project_id(project_id)
-
-    async def download_document(self, document_id: uuid.UUID, current_user_id: uuid.UUID):
-        document = await self.document_repo.get_by_id(document_id)
-        if not document:
-            raise DocumentNotFound()
-        project = await self.project_repo.get_if_user_member(document.project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
-        return document.file
-
-
-    async def update_document(self, new_file: UploadFile, document_id: uuid.UUID, current_user_id: uuid.UUID):
-        document = await self.document_repo.get_by_id(document_id)
-        if not document:
-            raise DocumentNotFound()
-        project = await self.project_repo.get_if_user_member(document.project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
-
-        file_bytes = await new_file.read()
-
-        document.file = SQLFile(
-            content=file_bytes,
-            filename=new_file.filename,
-            content_type=new_file.content_type,
-        )
-        updated_doc = await self.document_repo.update(document)
-        return {
-            "message": "Document updated successfully",
-            "document_id": updated_doc.id
-        }
-
-
-    async def delete_document(self, document_id: uuid.UUID, current_user_id: uuid.UUID):
-        document = await self.document_repo.get_by_id(document_id)
-        if not document:
-            raise DocumentNotFound()
-        project = await self.project_repo.get_if_user_member(document.project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
-        await self.document_repo.delete(document)
-
-        return {"message": "Document deleted successfully"}
-

@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import app.models  # noqa: F401
@@ -7,7 +7,8 @@ from app.auth.router import auth_router
 from app.shared.container import Container
 from app.shared.exceptions import BaseAppException
 from app.shared.handlers import base_app_exception_handler
-from app.projects.router import project_router, projects_router, document_router
+from app.projects.router import (project_router, projects_router)
+from app.documents.router import document_router
 from app.lifespan import lifespan
 
 

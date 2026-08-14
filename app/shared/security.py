@@ -2,7 +2,7 @@ import uuid
 
 import jwt
 from fastapi.concurrency import run_in_threadpool
-from app.shared.exceptions import InvalidLink, InvalidToken, TokenExpired
+from app.shared.exceptions import InvalidToken, TokenExpired
 from app.projects.models import ProjectPermission
 from app.shared.config import get_settings
 from pwdlib import PasswordHash

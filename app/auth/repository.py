@@ -5,31 +5,34 @@ import redis.asyncio as redis
 from .models import RefreshToken
 from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
 from app.users.models import User
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select, update
+from app.shared.db.database import inject_session
 
 
 class AuthRepository(IAuthRepository):
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
+        self.session_maker = session_maker
 
-    async def get_user_by_id(self, user_id: uuid.UUID)-> User | None:
+    @inject_session
+    async def get_user_by_id(self, user_id: uuid.UUID, session: AsyncSession = None)-> User | None:
         stmt = select(User).where(User.id==user_id)
-        return await self.db.scalar(stmt)
+        return await session.scalar(stmt)
 
-    async def get_user_by_email(self, email: str)-> User | None:
-        return await self.db.scalar(select(User).where(User.email == email))
+    @inject_session
+    async def get_user_by_email(self, email: str, session: AsyncSession = None)-> User | None:
+        return await session.scalar(select(User).where(User.email == email))
 
-
-    async def create_user(self, db_user: User, hashed_password: str)-> User:
-        self.db.add(db_user)
-        await self.db.commit()
-        await self.db.refresh(db_user)
+    @inject_session
+    async def create_user(self, db_user: User, hashed_password: str, session: AsyncSession = None)-> User:
+        session.add(db_user)
+        await session.commit()
+        await session.refresh(db_user)
         return db_user
 
-
-    async def save_or_update_token(self, user_id:uuid.UUID, token: str) -> None:
-        existing_token = await self.get_token_by_user_id(user_id)
+    @inject_session
+    async def save_or_update_token(self, user_id:uuid.UUID, token: str, session: AsyncSession = None) -> None:
+        existing_token = await self.get_token_by_user_id(user_id, session=session)
         if existing_token:
             existing_token.token = token
         else:
@@ -37,35 +40,39 @@ class AuthRepository(IAuthRepository):
                 user_id=user_id,
                 token=token,
             )
-            self.db.add(refresh_token)
-        await self.db.commit()
+            session.add(refresh_token)
+        await session.commit()
 
-
-    async def get_token_by_user_id(self, user_id: uuid.UUID)-> RefreshToken | None:
-        token = await self.db.scalar(select(RefreshToken).where(RefreshToken.user_id == user_id))
+    @inject_session
+    async def get_token_by_user_id(self, user_id: uuid.UUID, session: AsyncSession = None)-> RefreshToken | None:
+        token = await session.scalar(select(RefreshToken).where(RefreshToken.user_id == user_id))
         return token
 
 
-    async def get_token(self, token: str) -> RefreshToken | None:
-        return await self.db.scalar(select(RefreshToken).where(RefreshToken.token == token))
+    @inject_session
+    async def get_token(self, token: str, session: AsyncSession = None) -> RefreshToken | None:
+        return await session.scalar(select(RefreshToken).where(RefreshToken.token == token))
 
-    async def delete_token(self, token: RefreshToken) -> None:
-        await self.db.delete(token)
-        await self.db.commit()
+    @inject_session
+    async def delete_token(self, token: RefreshToken, session: AsyncSession = None) -> None:
+        await session.delete(token)
+        await session.commit()
 
 
-    async def delete_user_token_by_id(self, user_id: uuid.UUID) -> None:
-        token = await self.get_token_by_user_id(user_id)
+    @inject_session
+    async def delete_user_token_by_id(self, user_id: uuid.UUID, session: AsyncSession = None) -> None:
+        token = await self.get_token_by_user_id(user_id, session=session)
         if token is None:
             return
-        await self.db.delete(token)
-        await self.db.commit()
+        await session.delete(token)
+        await session.commit()
 
 
-    async def update_password(self, user: User, hashed_password: str) -> None:
+    @inject_session
+    async def update_password(self, user: User, hashed_password: str, session: AsyncSession = None) -> None:
         stmt = update(User).where(User.id==user.id).values(hashed_password=hashed_password)
-        await self.db.execute(stmt)
-        await self.db.commit()
+        await session.execute(stmt)
+        await session.commit()
 
 
 
