@@ -1,5 +1,4 @@
 import uuid
-
 from app.shared.db.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, DateTime
@@ -9,7 +8,7 @@ from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.auth.models import RefreshToken
-    from app.projects.models import Project
+    from app.projects.models import Project, ProjectMember
 
 
 
@@ -29,7 +28,9 @@ class User(Base):
 
     user_projects : Mapped[List['Project']] = relationship('Project', back_populates='owner',
                                                            cascade='all, delete-orphan')
-    members_projects : Mapped[List['Project']] = relationship(secondary='project_members', back_populates='members')
+
+    project_memberships: Mapped[List['ProjectMember']] = relationship('ProjectMember', back_populates='user',
+                                                                      cascade='all, delete-orphan')
 
     user_tokens: Mapped[List['RefreshToken']] = relationship('RefreshToken', back_populates='token_user',
                                                              cascade='all, delete-orphan')

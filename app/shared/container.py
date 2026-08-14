@@ -2,7 +2,7 @@ import redis.asyncio as redis
 from dependency_injector import containers, providers
 from app.auth.repository import AuthRepository, RedisRepository
 from app.auth.service import AuthService, EmailService
-from app.projects.repository import DocumentRepository, ProjectRepository
+from app.projects.repository import DocumentRepository, ProjectRepository, ProjectInviteRepository
 from app.projects.service import DocumentService, ProjectService
 from app.shared.config import get_settings
 from app.users.repository import UserRepository
@@ -35,6 +35,8 @@ class Container(containers.DeclarativeContainer):
     redis_repository_auth = providers.Factory(
         RedisRepository, redis_client=redis_client
     )
+    project_invite_repository = providers.Factory(ProjectInviteRepository,
+                                                  redis_client=redis_client)
 
     email_service = providers.Singleton(EmailService, settings=config)
     auth_service = providers.Factory(

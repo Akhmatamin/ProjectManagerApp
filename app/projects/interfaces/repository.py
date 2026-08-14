@@ -1,9 +1,8 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from app.projects.models import Project, Document
+from app.projects.models import Project, Document, ProjectMember, ProjectPermission
 from app.projects.schemas import (ProjectUpdateSchema)
-from app.users.models import User
 
 
 class IProjectRepository(ABC):
@@ -31,9 +30,32 @@ class IProjectRepository(ABC):
     async def delete(self, project: Project):
         pass
 
+    # @abstractmethod
+    # async def save_members(self, project: Project, member: User):
+    #     pass
     @abstractmethod
-    async def save_members(self, project: Project, member: User):
+    async def save_members_with_permission(self,project_member: ProjectMember):
         pass
+
+    @abstractmethod
+    async def get_user_permission(self, project_id: uuid.UUID, user_id: uuid.UUID) -> ProjectPermission | None:
+        pass
+
+
+class IProjectInviteRepository(ABC):
+    @abstractmethod
+    async def save_invite_jti(self, jti: str, payload: dict,
+                              ttl_seconds: int):
+        pass
+
+    @abstractmethod
+    async def get_invite_jti(self, jti: str):
+        pass
+
+    @abstractmethod
+    async def delete_invite_jti(self, jti: str):
+        pass
+
 
 
 class IDocumentRepository(ABC):

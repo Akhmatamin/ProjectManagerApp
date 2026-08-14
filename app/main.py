@@ -1,5 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+
 import app.models  # noqa: F401
 from app.auth.router import auth_router
 from app.shared.container import Container
@@ -14,6 +16,14 @@ def create_app():
     app = FastAPI(title="Project Manager API", lifespan=lifespan)
     app.state.container = container
     app.add_exception_handler(BaseAppException, base_app_exception_handler)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Разрешает запросы с любых фронтендов
+        allow_credentials=True,
+        allow_methods=["*"],  # Включая OPTIONS, POST, GET и т.д.
+        allow_headers=["*"],  # Включая Content-Type, Authorization и т.д.
+    )
 
     app.include_router(auth_router)
     app.include_router(projects_router)

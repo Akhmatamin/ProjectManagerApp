@@ -29,6 +29,18 @@ class EmailService(IEmailService):
             }
         return await asyncio.to_thread(resend.Emails.send, params) # type: ignore
 
+    async def send_project_invite(self, email: str, project_name: str,
+                                  join_link:str, permission: str):
+        params = {
+            'from': self.settings.resend_from,
+            'to': [email],
+            'subject': f"Invitation to join project {project_name}",
+            'html': (
+                 f"<p>You were invited to project <strong>{project_name}</strong>.</p>"
+                f"<p>Permission: <strong>{permission}</strong></p>"
+                f"<p><a href='{join_link}'>Join project</a></p>"),
+        }
+        return await asyncio.to_thread(resend.Emails.send, params) # type: ignore
 
 
 
