@@ -6,7 +6,8 @@ from app.documents.interfaces.service import IDocumentService
 from app.projects.interfaces.repository import IProjectRepository
 from app.documents.interfaces.repository import IDocumentRepository
 from app.documents.models import Document
-from app.projects.exceptions import NotMemberOrNoProject
+from app.projects.exceptions import NotMemberOrNoProject, AccessDenied
+from app.projects.models import ProjectPermission
 from app.documents.exceptions import DocumentNotFound
 
 
@@ -16,11 +17,16 @@ class DocumentService(IDocumentService):
         self.document_repo = document_repo
         self.project_repo = project_repo
 
+    async def _ensure_write_permission(self, project_id: uuid.UUID, current_user_id: uuid.UUID):
+        permission = await self.project_repo.get_user_permission(project_id, current_user_id)
+        if permission is None:
+            raise NotMemberOrNoProject()
+        if permission != ProjectPermission.WRITE:
+            raise AccessDenied("Write permission is required for this operation")
+
 
     async def upload_document(self, new_file, project_id: uuid.UUID, current_user_id: uuid.UUID):
-        project = await self.project_repo.get_if_user_member(project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
+        await self._ensure_write_permission(project_id, current_user_id)
 
         file_bytes = await new_file.read()
 
@@ -60,9 +66,7 @@ class DocumentService(IDocumentService):
         document = await self.document_repo.get_by_id(document_id)
         if not document:
             raise DocumentNotFound()
-        project = await self.project_repo.get_if_user_member(document.project_id, current_user_id)
-        if not project:
-            raise NotMemberOrNoProject()
+        await self._ensure_write_permission(document.project_id, current_user_id)
 
         file_bytes = await new_file.read()
 
@@ -85,6 +89,8 @@ class DocumentService(IDocumentService):
         project = await self.project_repo.get_if_user_member(document.project_id, current_user_id)
         if not project:
             raise NotMemberOrNoProject()
+        if current_user_id != project.owner_id:
+            raise AccessDenied("Only project owner can delete documents")
         await self.document_repo.delete(document)
 
         return {"message": "Document deleted successfully"}

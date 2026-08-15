@@ -53,6 +53,7 @@ class AuthRepository(IAuthRepository):
     async def get_token(self, token: str, session: AsyncSession = None) -> RefreshToken | None:
         return await session.scalar(select(RefreshToken).where(RefreshToken.token == token))
 
+
     @inject_session
     async def delete_token(self, token: RefreshToken, session: AsyncSession = None) -> None:
         await session.delete(token)

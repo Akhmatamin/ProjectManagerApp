@@ -52,7 +52,7 @@ class AuthService(IAuthService):
         self.settings = settings
         self.email_service = email_service
 
-    async def register_user(self, user_data: UserRegisterSchema):
+    async def register_user(self, user_data: UserRegisterSchema)-> User | None:
         user_exists = await self.user_repo.get_user_by_email(user_data.email)
         if user_exists:
             raise EmailAlreadyExists()
@@ -111,7 +111,6 @@ class AuthService(IAuthService):
 
     async def reset_password(self, email: str, code: str, new_password: str):
         stored_code = await self.redis_repo.get_code(email)
-        print(f"From redis: {stored_code}, From client: {code}")
         if not stored_code or stored_code != code:
             raise InvalidResetCode()
 

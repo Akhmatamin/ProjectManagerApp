@@ -51,6 +51,12 @@ class ProjectService(IProjectService):
         return project
 
     async def update_project_details(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, current_user: uuid.UUID):
+        permission = await self.project_repo.get_user_permission(project_id, current_user)
+        if permission is None:
+            raise NotMemberOrNoProject()
+        if permission != ProjectPermission.WRITE:
+            raise AccessDenied("Write permission is required to update project details")
+
         updated_project = await self.project_repo.update(project_id, project_data, current_user)
         if not updated_project:
             raise NotMemberOrNoProject()
