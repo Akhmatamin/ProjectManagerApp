@@ -4,14 +4,20 @@ on:
     branches:
       - main
       - unit-tests
+      - dev
   pull_request:
     branches:
       - main
+      - dev
 
 jobs:
   build-and-test:
     name: Build docker image and run tests
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
 
 
     services:
@@ -74,3 +80,26 @@ jobs:
             -e REDIS_PORT=$REDIS_PORT \
             my-backend-app:latest \
             bash -c "uv run alembic upgrade head && uv run pytest tests/"
+
+      - name: login to github container registry
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push docker image
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        run: |
+          IMAGE_NAME=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            TAG="latest"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          
+          docker tag my-backend-app:latest $IMAGE_NAME:$TAG
+          
+          docker push $IMAGE_NAME:$TAG
