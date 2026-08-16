@@ -103,3 +103,15 @@ jobs:
           docker tag my-backend-app:latest $IMAGE_NAME:$TAG
           
           docker push $IMAGE_NAME:$TAG
+
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Connected to EC2"
+            whoami
+            hostname
+            docker --version
