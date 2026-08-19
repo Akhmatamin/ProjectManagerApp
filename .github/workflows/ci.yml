@@ -127,7 +127,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/projectmanagerapp
+            cd /home/ubuntu/projectmanager
             docker compose pull api
             docker compose up -d 
             docker compose ps
