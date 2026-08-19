@@ -62,6 +62,11 @@ jobs:
           REFRESH_TOKEN_LIFETIME: 86400
           RESEND_API_KEY: fake_resend_api_key_for_ci
 
+          AWS_ACCESS_KEY_ID: fake_aws_access_key_for_ci
+          AWS_SECRET_ACCESS_KEY: fake_aws_secret_key_for_ci
+          AWS_REGION: us-east-1
+          S3_BUCKET_NAME: fake_s3_bucket_for_ci
+
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
