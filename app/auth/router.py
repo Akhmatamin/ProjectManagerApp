@@ -50,10 +50,7 @@ async def change_password(password_data: ChangePasswordSchema,
 async def get_verification_code(email: RequestResetCodeSchema,
                                 auth_service: FromDishka[IAuthService]):
 
-    try:
-        return await auth_service.request_reset_code(email.email)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not all emails available yet")
+    return await auth_service.request_reset_code(email.email)
 
 @auth_router.post('/reset_password', response_model=dict, status_code=status.HTTP_200_OK)
 async def reset_password(data: ResetPasswordSchema,
