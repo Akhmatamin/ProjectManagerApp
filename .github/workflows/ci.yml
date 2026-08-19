@@ -131,5 +131,8 @@ jobs:
             docker compose pull api
             docker compose run --rm api uv run alembic upgrade head
             docker compose up -d 
+            
+            sleep 10
+            curl --fail http://localhost/docs
+          
             docker compose ps
-
