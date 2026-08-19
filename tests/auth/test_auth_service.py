@@ -206,7 +206,7 @@ class TestRequestResetCode:
         email_service.send_reset_code.assert_awaited_once_with(sample_user.email, '1212')
         redis_repo.save_code.assert_awaited_once_with(sample_user.email, '1212',
                                                       expiration_time=settings.reset_code_expire_seconds)
-        assert '1212' in result['message']
+        assert result['message'] == 'Reset code sent to email.'
 
     async def test_request_reset_code_wrong_email(self, service, user_repo,
                                                   email_service):

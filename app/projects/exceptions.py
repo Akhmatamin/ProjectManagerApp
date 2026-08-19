@@ -24,3 +24,11 @@ class UserAlreadyMember(BaseAppException):
 class UserNotFound(BaseAppException):
     def __init__(self, message:str = "User doesn't exist"):
         super().__init__(message, status_code=404)
+
+class FileKeyMissing(BaseAppException):
+    def __init__(self, message:str = "File key missing"):
+        super().__init__(message, status_code=400)
+
+class NotImplementedYet(BaseAppException):
+    def __init__(self, message:str = "Not all emails are available yet"):
+        super().__init__(message, status_code=501)

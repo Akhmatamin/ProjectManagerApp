@@ -1,66 +1,61 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from dishka.integrations.fastapi import DishkaRoute, FromDishka
+from fastapi import APIRouter, Depends, status, HTTPException
 from app.users.models import User
 from app.auth.interfaces.service import IAuthService
 from .schemas import (UserRegisterSchema, UserCreatedResponse,UserLoginSchema,
                       ChangePasswordSchema, RefreshTokenSchema, RequestResetCodeSchema, ResetPasswordSchema)
 from app.shared.dependencies import get_current_user
-from app.shared.container import Container
-from dependency_injector.wiring import Provide, inject
 
-auth_router = APIRouter(prefix="/auth", tags=["Auth"])
+auth_router = APIRouter(prefix="/auth", tags=["Auth"], route_class=DishkaRoute)
 
 
 
 @auth_router.post('/register', response_model=UserCreatedResponse, status_code=status.HTTP_201_CREATED)
-@inject
 async def register_user(user_data: UserRegisterSchema,
-                        auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])]):
+                        auth_service: FromDishka[IAuthService]):
     return await auth_service.register_user(user_data)
 
 
 @auth_router.post('/login', response_model=dict, status_code=status.HTTP_200_OK)
-@inject
 async def login(user_data: UserLoginSchema,
-                auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])])-> dict:
+                auth_service: FromDishka[IAuthService])-> dict:
     return await auth_service.login(user_data)
 
 
 @auth_router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
-@inject
 async def logout(token: RefreshTokenSchema,
-                 auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])]):
+                 auth_service: FromDishka[IAuthService]):
     await auth_service.logout(token.refresh_token)
 
 
 @auth_router.post('/refresh', response_model=dict, status_code=status.HTTP_200_OK)
-@inject
 async def refresh(token: RefreshTokenSchema,
-                  auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])]):
+                  auth_service: FromDishka[IAuthService]):
     return await auth_service.refresh_new_token(token.refresh_token)
 
 
 
 @auth_router.put('/change_password', response_model=dict, status_code=status.HTTP_200_OK)
-@inject
 async def change_password(password_data: ChangePasswordSchema,
                     current_user: Annotated[User, Depends(get_current_user)],
-                    auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])]):
+                    auth_service: FromDishka[IAuthService]):
 
     await auth_service.change_password(current_user, password_data)
     return {"message": "Password changed successfully!"}
 
 
 @auth_router.post('/forgot_password',response_model=dict, status_code=status.HTTP_200_OK)
-@inject
 async def get_verification_code(email: RequestResetCodeSchema,
-                                auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])]):
-    return await auth_service.request_reset_code(email.email)
+                                auth_service: FromDishka[IAuthService]):
 
+    try:
+        return await auth_service.request_reset_code(email.email)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not all emails available yet")
 
 @auth_router.post('/reset_password', response_model=dict, status_code=status.HTTP_200_OK)
-@inject
 async def reset_password(data: ResetPasswordSchema,
-                        auth_service: Annotated[IAuthService, Depends(Provide[Container.auth_service])]):
+                        auth_service: FromDishka[IAuthService]):
     return await auth_service.reset_password(data.email, data.code, data.new_password)

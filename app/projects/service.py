@@ -11,7 +11,7 @@ from app.projects.models import Project, ProjectMember, ProjectPermission
 from app.projects.schemas import ProjectUpdateSchema
 from app.projects.exceptions import (ProjectNotFound,
                                      NotMemberOrNoProject, AccessDenied,
-                                     UserAlreadyMember, UserNotFound)
+                                     UserAlreadyMember, UserNotFound, NotImplementedYet)
 
 
 
@@ -123,12 +123,15 @@ class ProjectService(IProjectService):
                                                }, ttl_seconds=ttl_seconds)
 
         join_link = f"{self.settings.frontend_base_url}?token={token}"
-        await self.email_service.send_project_invite(
-            email=email, project_name=project.name,join_link=join_link, permission=permission.value
-        )
-        return {
-            "message": f"Email for invite sent to user: {email}"
-        }
+        try:
+            await self.email_service.send_project_invite(
+                email=email, project_name=project.name,join_link=join_link, permission=permission.value
+            )
+            return {
+                "message": f"Email for invite sent to user: {email}"
+            }
+        except Exception:
+            raise NotImplementedYet()
 
 
     async def join_project_by_token(self, token: str, current_user_id: uuid.UUID):

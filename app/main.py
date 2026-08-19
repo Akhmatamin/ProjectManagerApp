@@ -1,21 +1,23 @@
 import uvicorn
+from dishka import make_async_container
+from dishka.integrations.fastapi import FastapiProvider, setup_dishka
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 import app.models  # noqa: F401
 from app.auth.router import auth_router
-from app.shared.container import Container
 from app.shared.exceptions import BaseAppException
 from app.shared.handlers import base_app_exception_handler
+from app.shared.container_dishka import AppProvider
 from app.projects.router import (project_router, projects_router)
 from app.documents.router import document_router
 from app.lifespan import lifespan
 
 
 def create_app():
-    container = Container()
     app = FastAPI(title="Project Manager API", lifespan=lifespan)
-    app.state.container = container
+    container = make_async_container(AppProvider(), FastapiProvider())
+    setup_dishka(container=container, app=app)
     app.add_exception_handler(BaseAppException, base_app_exception_handler)
 
     app.add_middleware(

@@ -18,8 +18,8 @@ def mock_session():
 
 
 @pytest.fixture
-def repo():
-    return ProjectRepository(session_maker=MagicMock())
+def repo(mock_session):
+    return ProjectRepository(session=mock_session)
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ class TestSave:
     async def test_save(self, repo, mock_session, sample_project):
         mock_session.scalar.return_value = sample_project
 
-        result = await repo.save(sample_project, session=mock_session)
+        result = await repo.save(sample_project)
 
         mock_session.add.assert_called_once_with(sample_project)
         mock_session.commit.assert_awaited_once()
@@ -54,7 +54,7 @@ class TestGetProjectById:
         execute_result.scalar_one_or_none.return_value = sample_project
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_by_id(sample_project.id, session=mock_session)
+        result = await repo.get_by_id(sample_project.id)
 
         mock_session.execute.assert_awaited_once()
         assert result == sample_project
@@ -64,7 +64,7 @@ class TestGetProjectById:
         execute_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_by_id(uuid.uuid4(), session=mock_session)
+        result = await repo.get_by_id(uuid.uuid4())
 
         assert result is None
 
@@ -73,7 +73,7 @@ class TestGetProjectById:
         execute_result.scalar_one_or_none.return_value = sample_project
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_by_id(sample_project.id, load_documents=True, session=mock_session)
+        result = await repo.get_by_id(sample_project.id, load_documents=True)
 
         mock_session.execute.assert_awaited_once()
 
@@ -89,7 +89,7 @@ class TestGetProjectsByUserId:
         execute_result.scalars.return_value = scalars_result
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_by_user_id(uuid.uuid4(), session=mock_session)
+        result = await repo.get_by_user_id(uuid.uuid4())
 
         assert result == [sample_project]
 
@@ -100,7 +100,7 @@ class TestGetProjectsByUserId:
         execute_result.scalars.return_value = scalars_result
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_by_user_id(uuid.uuid4(), session=mock_session)
+        result = await repo.get_by_user_id(uuid.uuid4())
 
         assert result == []
 
@@ -111,7 +111,7 @@ class TestGetProjectIfUserMember:
         execute_result.scalar_one_or_none.return_value = sample_project
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_if_user_member(sample_project.id, uuid.uuid4(), session=mock_session)
+        result = await repo.get_if_user_member(sample_project.id, uuid.uuid4())
 
         assert result == sample_project
 
@@ -120,7 +120,7 @@ class TestGetProjectIfUserMember:
         execute_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = execute_result
 
-        result = await repo.get_if_user_member(uuid.uuid4(), uuid.uuid4(), session=mock_session)
+        result = await repo.get_if_user_member(uuid.uuid4(), uuid.uuid4())
 
         assert result is None
 
@@ -133,7 +133,7 @@ class TestUpdateProject:
         mock_session.execute.return_value = exec_result
 
         data = ProjectUpdateSchema(name="renamed project", description="updated description")
-        result = await repo.update(sample_project.id, data, uuid.uuid4(), session=mock_session)
+        result = await repo.update(sample_project.id, data, uuid.uuid4())
 
         assert sample_project.name == "renamed project"
         assert sample_project.description == "updated description"
@@ -147,7 +147,7 @@ class TestUpdateProject:
         mock_session.execute.return_value = exec_result
 
         data = ProjectUpdateSchema(name="Renamed project")
-        result = await repo.update(uuid.uuid4(), data, uuid.uuid4(), session=mock_session)
+        result = await repo.update(uuid.uuid4(), data, uuid.uuid4())
 
         assert result is None
         mock_session.commit.assert_not_called()
@@ -156,7 +156,7 @@ class TestUpdateProject:
 class TestDelete:
 
     async def test_delete(self, repo, mock_session, sample_project):
-        await repo.delete(sample_project, session=mock_session)
+        await repo.delete(sample_project)
 
         mock_session.delete.assert_awaited_once_with(sample_project)
         mock_session.commit.assert_awaited_once()
@@ -169,7 +169,7 @@ class TestSaveMembersWithPermission:
             project_id=sample_project.id, user_id=uuid.uuid4(), permission=ProjectPermission.READ
         )
 
-        result = await repo.save_members_with_permission(member, session=mock_session)
+        result = await repo.save_members_with_permission(member)
 
         mock_session.add.assert_called_once_with(member)
         mock_session.commit.assert_awaited_once()
@@ -184,7 +184,7 @@ class TestGetUserPermission:
         exec_result.scalar_one_or_none.return_value = ProjectPermission.WRITE
         mock_session.execute.return_value = exec_result
 
-        result = await repo.get_user_permission(uuid.uuid4(), uuid.uuid4(), session=mock_session)
+        result = await repo.get_user_permission(uuid.uuid4(), uuid.uuid4())
 
         assert result == ProjectPermission.WRITE
 
@@ -193,7 +193,7 @@ class TestGetUserPermission:
         exec_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = exec_result
 
-        result = await repo.get_user_permission(uuid.uuid4(), uuid.uuid4(), session=mock_session)
+        result = await repo.get_user_permission(uuid.uuid4(), uuid.uuid4())
 
         assert result is None
 

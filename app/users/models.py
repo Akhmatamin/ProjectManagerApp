@@ -1,7 +1,7 @@
 import uuid
 from app.shared.db.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, DateTime
+from sqlalchemy import String, DateTime, BigInteger
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
 from typing import List, TYPE_CHECKING
@@ -16,6 +16,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
+    github_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
     first_name: Mapped[str] = mapped_column(String(64), nullable=False)
     last_name: Mapped[str] = mapped_column(String(64), nullable=False)
     email: Mapped[str] = mapped_column(String(254), unique=True, nullable=False)

@@ -1,44 +1,38 @@
 import uuid
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.documents.interfaces.repository import IDocumentRepository
 from app.documents.models import Document
-from app.shared.db.database import inject_session
 
 
 
 class DocumentRepository(IDocumentRepository):
-    def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
-        self.session_maker = session_maker
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    @inject_session
-    async def save(self, new_document: Document, session: AsyncSession = None):
-        session.add(new_document)
-        await session.commit()
-        await session.refresh(new_document)
+    async def save(self, new_document: Document):
+        self.session.add(new_document)
+        await self.session.commit()
+        await self.session.refresh(new_document)
         return new_document
 
-    @inject_session
-    async def get_by_project_id(self, project_id: uuid.UUID, session: AsyncSession = None):
+    async def get_by_project_id(self, project_id: uuid.UUID):
         stmt = select(Document).where(Document.project_id == project_id)
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    @inject_session
-    async def get_by_id(self, document_id: uuid.UUID, session: AsyncSession = None):
+    async def get_by_id(self, document_id: uuid.UUID):
         stmt = select(Document).where(Document.id == document_id)
-        result = await session.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
 
-    @inject_session
-    async def update(self, document: Document, session: AsyncSession = None) -> Document:
-        session.add(document)
-        await session.commit()
-        await session.refresh(document)
+    async def update(self, document: Document) -> Document:
+        self.session.add(document)
+        await self.session.commit()
+        await self.session.refresh(document)
         return document
 
-    @inject_session
-    async def delete(self, document: Document, session: AsyncSession = None):
-        await session.delete(document)
-        await session.commit()
+    async def delete(self, document: Document):
+        await self.session.delete(document)
+        await self.session.commit()

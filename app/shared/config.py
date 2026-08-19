@@ -26,9 +26,14 @@ class Settings(BaseSettings):
     resend_api_key: str
     resend_from: str = 'onboarding@resend.dev'
 
-    frontend_base_url : str = 'http://localhost:3000/index.html'
+    frontend_base_url : str = 'https://donatkivi-frontend-page.s3.eu-north-1.amazonaws.com/index.html'
     invite_link_expire_seconds: int = 260000 #3 days
     backend_base_url: str = 'http://127.0.0.1:8000'
+
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_REGION: str = "eu-north-1"
+    S3_BUCKET_NAME: str = "my-project-bucket-documents"
 
 
     model_config = SettingsConfigDict(

@@ -5,7 +5,7 @@ import pytest
 
 from app.documents.service import DocumentService
 from app.documents.models import Document
-from app.documents.exceptions import DocumentNotFound
+from app.documents.exceptions import DocumentNotFound, FileTooLarge
 from app.projects.exceptions import NotMemberOrNoProject, AccessDenied
 from app.projects.models import ProjectPermission
 
@@ -23,8 +23,13 @@ def project_repo():
 
 
 @pytest.fixture
-def service(document_repo, project_repo):
-    return DocumentService(document_repo=document_repo, project_repo=project_repo)
+def s3_service():
+    return AsyncMock()
+
+
+@pytest.fixture
+def service(document_repo, project_repo, s3_service):
+    return DocumentService(document_repo=document_repo, project_repo=project_repo, s3_service=s3_service)
 
 
 @pytest.fixture
@@ -47,6 +52,8 @@ def upload_file():
     file = AsyncMock()
     file.filename = "report.pdf"
     file.content_type = "application/pdf"
+    file.size = 1024
+    file.file = b"file-bytes"
     file.read.return_value = b"file-bytes"
     return file
 
@@ -71,7 +78,6 @@ class TestUploadDocument:
             result = await service.upload_document(upload_file, project_id, user_id)
 
         project_repo.get_user_permission.assert_awaited_once_with(project_id, user_id)
-        upload_file.read.assert_awaited_once()
         mock_sqlfile.assert_called_once_with(
             content=b"file-bytes", filename="report.pdf", content_type="application/pdf"
         )
@@ -83,6 +89,16 @@ class TestUploadDocument:
             "message": "Document uploaded successfully",
             "document_id": saved_doc.id,
         }
+
+    async def test_upload_document_file_too_large(self, service, project_repo, document_repo,
+                                                  upload_file, project_id, user_id):
+        project_repo.get_user_permission.return_value = ProjectPermission.WRITE
+        upload_file.size = 201 * 1024 * 1024
+
+        with pytest.raises(FileTooLarge):
+            await service.upload_document(upload_file, project_id, user_id)
+
+        document_repo.save.assert_not_called()
 
     async def test_upload_document_not_member(self, service, project_repo, document_repo,
                                               upload_file, project_id, user_id):
@@ -132,13 +148,57 @@ class TestDownloadDocument:
 
     async def test_download_document_success(self, service, document_repo, project_repo,
                                              sample_document, sample_project, user_id):
+        sample_document.file.file_id = "uploads/file-123"
+        sample_document.file.filename = "report.pdf"
+        sample_document.file.content_type = "application/pdf"
         document_repo.get_by_id.return_value = sample_document
         project_repo.get_if_user_member.return_value = sample_project
+        service.s3_service.get_download_url.return_value = "https://example.com/download"
 
         result = await service.download_document(sample_document.id, user_id)
 
         project_repo.get_if_user_member.assert_awaited_once_with(sample_document.project_id, user_id)
-        assert result == sample_document.file
+        service.s3_service.get_download_url.assert_awaited_once_with(
+            file_key="uploads/file-123",
+            file_name="report.pdf",
+            content_type="application/pdf",
+        )
+        assert result == {
+            "download_url": "https://example.com/download",
+            "file_key": "uploads/file-123",
+            "file_name": "report.pdf",
+            "content_type": "application/pdf",
+            "file_id": "uploads/file-123",
+        }
+
+    async def test_download_document_success_resized_image(self, service, document_repo, project_repo,
+                                                           sample_document, sample_project, user_id):
+        sample_document.file.file_id = "uploads/image-123"
+        sample_document.file.filename = "image.jpg"
+        sample_document.file.content_type = "image/jpeg"
+        document_repo.get_by_id.return_value = sample_document
+        project_repo.get_if_user_member.return_value = sample_project
+        service.s3_service.get_download_url.return_value = "https://example.com/download-image"
+
+        result = await service.download_document(sample_document.id, user_id, is_resized=True)
+
+        service.s3_service.get_download_url.assert_awaited_once_with(
+            file_key="resized/uploads/image-123",
+            file_name="image.jpg",
+            content_type="image/jpeg",
+        )
+        assert result["file_key"] == "resized/uploads/image-123"
+
+    async def test_download_document_resized_non_image_forbidden(self, service, document_repo, project_repo,
+                                                                 sample_document, sample_project, user_id):
+        sample_document.file.file_id = "uploads/file-123"
+        sample_document.file.filename = "report.pdf"
+        sample_document.file.content_type = "application/pdf"
+        document_repo.get_by_id.return_value = sample_document
+        project_repo.get_if_user_member.return_value = sample_project
+
+        with pytest.raises(AccessDenied, match="Only JPEG and PNG images are resized"):
+            await service.download_document(sample_document.id, user_id, is_resized=True)
 
     async def test_download_document_not_found(self, service, document_repo, user_id):
         document_repo.get_by_id.return_value = None
@@ -167,7 +227,6 @@ class TestUpdateDocument:
             mock_sqlfile.return_value = "new-attached-file"
             result = await service.update_document(upload_file, sample_document.id, user_id)
 
-        upload_file.read.assert_awaited_once()
         mock_sqlfile.assert_called_once_with(
             content=b"file-bytes", filename="report.pdf", content_type="application/pdf"
         )
@@ -250,4 +309,5 @@ class TestDeleteDocument:
             await service.delete_document(sample_document.id, user_id)
 
         document_repo.delete.assert_not_called()
+
 

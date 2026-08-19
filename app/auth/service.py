@@ -1,6 +1,5 @@
 import uuid
 import random
-import resend, asyncio
 from .exceptions import (EmailAlreadyExists, InvalidCredentials,
                          InvalidRefreshToken, ExpiredRefreshToken, InvalidPassword,
                          InvalidEmail, InvalidResetCode)
@@ -12,35 +11,37 @@ from .utils import token_expired
 from app.shared.security import (get_password_hash, verify_password,
                                  create_access_token, create_refresh_token)
 from app.shared.config import Settings
+from ..shared.client import ResendAPIClient
 
 
 
 class EmailService(IEmailService):
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, resend_client: ResendAPIClient):
         self.settings = settings
-        resend.api_key=self.settings.resend_api_key
+        self.resend_client = resend_client
 
     async def send_reset_code(self, email: str, code: str):
-        params = {
-                "from": self.settings.resend_from,
-                "to": [email],
-                "subject": "Verification code",
-                "html": f"<p>Your verification code is: <strong>{code}</strong></p>"
-            }
-        return await asyncio.to_thread(resend.Emails.send, params) # type: ignore
+        html_content = f"<p>Your verification code is: <strong>{code}</strong></p>"
+        return await self.resend_client.send_email(
+            to_email=email,
+            subject="Verification code",
+            html_content=html_content,
+        )
 
     async def send_project_invite(self, email: str, project_name: str,
                                   join_link:str, permission: str):
-        params = {
-            'from': self.settings.resend_from,
-            'to': [email],
-            'subject': f"Invitation to join project {project_name}",
-            'html': (
-                 f"<p>You were invited to project <strong>{project_name}</strong>.</p>"
-                f"<p>Permission: <strong>{permission}</strong></p>"
-                f"<p><a href='{join_link}'>Join project</a></p>"),
-        }
-        return await asyncio.to_thread(resend.Emails.send, params) # type: ignore
+
+        html_content = (
+            f"<p>You were invited to project <strong>{project_name}</strong>.</p>"
+            f"<p>Permission: <strong>{permission}</strong></p>"
+            f"<p><a href='{join_link}'>Join project</a></p>"
+        )
+
+        return await self.resend_client.send_email(
+            to_email=email,
+            subject=f"Invitation to join project {project_name}",
+            html_content=html_content,
+        )
 
 
 
@@ -107,7 +108,7 @@ class AuthService(IAuthService):
         await self.email_service.send_reset_code(email, str(code))
         await self.redis_repo.save_code(email, str(code), expiration_time=self.settings.reset_code_expire_seconds)
 
-        return {"message": f"Reset code sent to email. Reset code: {code}"}
+        return {"message": f"Reset code sent to email."}
 
     async def reset_password(self, email: str, code: str, new_password: str):
         stored_code = await self.redis_repo.get_code(email)
@@ -123,6 +124,7 @@ class AuthService(IAuthService):
         await self.user_repo.delete_user_token_by_id(user.id)
         await self.redis_repo.delete_code(email)
         return {"message": "Your password has been reset!"}
+
 
 
     async def _new_token_pair(self, user_id: uuid.UUID) -> dict:
