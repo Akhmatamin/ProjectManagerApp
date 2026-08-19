@@ -119,3 +119,16 @@ jobs:
             whoami
             hostname
             docker --version
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/projectmanagerapp
+            docker compose pull api
+            docker compose up -d 
+            docker compose ps
+
