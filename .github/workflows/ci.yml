@@ -129,6 +129,7 @@ jobs:
           script: |
             cd /home/ubuntu/projectmanager
             docker compose pull api
+            docker compose run --rm api uv run alembic upgrade head
             docker compose up -d 
             docker compose ps
 
