@@ -1,9 +1,8 @@
-name: Continuous Integration
+name: CI and Deployment
 on:
   push:
     branches:
       - main
-      - unit-tests
       - dev
   pull_request:
     branches:
@@ -91,7 +90,7 @@ jobs:
             bash -c "uv run alembic upgrade head && uv run pytest tests/"
 
       - name: login to github container registry
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -99,21 +98,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push docker image
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           IMAGE_NAME=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          
-          if [ "${{ github.ref_name }}" == "main" ]; then
-            TAG="latest"
-          else
-            TAG="${{ github.ref_name }}"
-          fi
-          
-          docker tag my-backend-app:latest $IMAGE_NAME:$TAG
-          
-          docker push $IMAGE_NAME:$TAG
+
+          docker tag my-backend-app:latest $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:latest
+
 
       - name: Test SSH connection
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -126,6 +120,7 @@ jobs:
             docker --version
 
       - name: Deploy to EC2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.EC2_HOST }}
