@@ -19,6 +19,7 @@ class ProjectCreateSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class DocumentsListSchema(BaseModel):
     id: uuid.UUID
     file: dict | None
@@ -34,7 +35,7 @@ def _extract_members(value):
 
 
 class ProjectsListSchema(BaseModel):
-    id: uuid.UUID = Field(serialization_alias='project_id')
+    id: uuid.UUID = Field(serialization_alias="project_id")
     name: str
     description: str
     owner_id: uuid.UUID
@@ -73,7 +74,7 @@ class DocumentUploadSchema(BaseModel):
 
 
 class ProjectCreatedSchema(BaseModel):
-    project_id: uuid.UUID = Field(validation_alias='id')
+    project_id: uuid.UUID = Field(validation_alias="id")
     name: str
     description: str
     owner: UserSchemaMeta
@@ -99,7 +100,7 @@ class ProjectDetailsSchema(ProjectCreatedSchema):
 
 
 class UserReadSchema(BaseModel):
-    id : uuid.UUID
+    id: uuid.UUID
     email: str
     first_name: str
     last_name: str
@@ -109,6 +110,7 @@ class UserReadSchema(BaseModel):
     @field_serializer("joined_at")
     def serialize_date(self, date: datetime):
         return date.strftime("%d-%m-%Y %H:%M:%S")
+
 
 class ProjectReadSchema(BaseModel):
     id: uuid.UUID
@@ -132,5 +134,3 @@ class ProjectReadSchema(BaseModel):
 class InviteMemberResponse(BaseModel):
     message: str
     project_id: uuid.UUID
-
-

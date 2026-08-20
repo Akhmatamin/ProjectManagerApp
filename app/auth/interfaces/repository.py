@@ -7,36 +7,39 @@ from app.users.models import User
 
 class IAuthRepository(ABC):
     @abstractmethod
-    async def get_user_by_id(self, user_id: uuid.UUID)-> User | None:
+    async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
         pass
 
     @abstractmethod
-    async def get_user_by_email(self, email: str)-> User | None:
+    async def get_user_by_email(self, email: str) -> User | None:
         pass
 
     @abstractmethod
-    async def create_user(self, db_user: User, hashed_password: str)-> User | None:
+    async def create_user(self, db_user: User, hashed_password: str) -> User | None:
         pass
 
     @abstractmethod
-    async def save_or_update_token(self, user_id: uuid.UUID, token: str)-> RefreshToken | None:
+    async def save_or_update_token(
+        self, user_id: uuid.UUID, token: str
+    ) -> RefreshToken | None:
         pass
 
     @abstractmethod
-    async def get_token(self, token: str)-> RefreshToken | None:
+    async def get_token(self, token: str) -> RefreshToken | None:
         pass
 
     @abstractmethod
-    async def delete_token(self, token: RefreshToken)-> None:
+    async def delete_token(self, token: RefreshToken) -> None:
         pass
 
     @abstractmethod
-    async def delete_user_token_by_id(self, user_id: uuid.UUID)-> None:
+    async def delete_user_token_by_id(self, user_id: uuid.UUID) -> None:
         pass
 
     @abstractmethod
-    async def update_password(self, user: User, hashed_password: str)-> None:
+    async def update_password(self, user: User, hashed_password: str) -> None:
         pass
+
 
 class IRedisRepository(ABC):
     @abstractmethod
@@ -50,4 +53,3 @@ class IRedisRepository(ABC):
     @abstractmethod
     async def delete_code(self, email: str) -> None:
         pass
-

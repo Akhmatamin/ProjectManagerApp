@@ -20,7 +20,9 @@ async def get_password_hash(password: str) -> str:
 
 
 async def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return await run_in_threadpool(password_hash.verify, plain_password, hashed_password)
+    return await run_in_threadpool(
+        password_hash.verify, plain_password, hashed_password
+    )
 
 
 async def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -34,11 +36,17 @@ async def create_access_token(data: dict, expires_delta: timedelta | None = None
 
 
 async def create_refresh_token(data: dict):
-    return await create_access_token(data, expires_delta=timedelta(days=settings.refresh_token_lifetime))
+    return await create_access_token(
+        data, expires_delta=timedelta(days=settings.refresh_token_lifetime)
+    )
 
 
-def create_invite_token(project_id: uuid.UUID, permission: ProjectPermission,
-                        jti: str, expires_in_seconds: int = 260000): #3 days approximately
+def create_invite_token(
+    project_id: uuid.UUID,
+    permission: ProjectPermission,
+    jti: str,
+    expires_in_seconds: int = 260000,
+):  # 3 days approximately
     expire = datetime.now(UTC) + timedelta(seconds=expires_in_seconds)
 
     payload = {
@@ -46,7 +54,7 @@ def create_invite_token(project_id: uuid.UUID, permission: ProjectPermission,
         "project_id": str(project_id),
         "permission": permission.value,
         "jti": jti,
-        "exp": expire
+        "exp": expire,
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 

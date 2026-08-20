@@ -9,9 +9,11 @@ class InvalidToken(BaseAppException):
     def __init__(self, message: str = "Invalid token"):
         super().__init__(message, status_code=400)
 
+
 class TokenExpired(BaseAppException):
     def __init__(self, message: str = "Token has expired"):
         super().__init__(message, status_code=400)
+
 
 class InvalidLink(BaseAppException):
     def __init__(self, message: str = "Invalid link"):

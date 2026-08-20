@@ -5,11 +5,12 @@ Revises: d4952e38e85c
 Create Date: 2026-08-10 14:58:01.980016
 
 """
+
 from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = 'e736743c244b'
-down_revision: str | Sequence[str] | None = 'd4952e38e85c'
+revision: str = "e736743c244b"
+down_revision: str | Sequence[str] | None = "d4952e38e85c"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

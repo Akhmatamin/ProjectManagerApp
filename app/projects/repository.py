@@ -22,15 +22,20 @@ class ProjectRepository(IProjectRepository):
         self.session.add(new_project)
         await self.session.commit()
         await self.session.refresh(new_project)
-        stmt = select(Project).where(Project.id == new_project.id).options(
-            selectinload(Project.owner),
-            selectinload(Project.documents),
-            selectinload(Project.user_memberships).selectinload(ProjectMember.user),
+        stmt = (
+            select(Project)
+            .where(Project.id == new_project.id)
+            .options(
+                selectinload(Project.owner),
+                selectinload(Project.documents),
+                selectinload(Project.user_memberships).selectinload(ProjectMember.user),
+            )
         )
         return await self.session.scalar(stmt)
 
-
-    async def get_by_id(self, project_id: uuid.UUID, load_documents: bool = False) -> Project | None:
+    async def get_by_id(
+        self, project_id: uuid.UUID, load_documents: bool = False
+    ) -> Project | None:
         options = [
             selectinload(Project.owner),
             selectinload(Project.user_memberships).selectinload(ProjectMember.user),
@@ -43,25 +48,42 @@ class ProjectRepository(IProjectRepository):
         return result.scalar_one_or_none()
 
     async def get_by_user_id(self, user_id: uuid.UUID):
-        stmt = (select(Project).where(Project.user_memberships.any(ProjectMember.user_id == user_id)).options(
-            selectinload(Project.owner),
-            selectinload(Project.documents),
-            selectinload(Project.user_memberships).selectinload(ProjectMember.user),
-        ).execution_options(populate_existing=True))
+        stmt = (
+            select(Project)
+            .where(Project.user_memberships.any(ProjectMember.user_id == user_id))
+            .options(
+                selectinload(Project.owner),
+                selectinload(Project.documents),
+                selectinload(Project.user_memberships).selectinload(ProjectMember.user),
+            )
+            .execution_options(populate_existing=True)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().unique().all())
 
     async def get_if_user_member(self, project_id: uuid.UUID, user_id: uuid.UUID):
-        stmt = (select(Project).where(Project.id == project_id,
-                                     Project.user_memberships.any(ProjectMember.user_id == user_id)).options(
-            selectinload(Project.owner),
-            selectinload(Project.user_memberships).selectinload(ProjectMember.user),
-            selectinload(Project.documents),
-        ).execution_options(populate_existing=True))
+        stmt = (
+            select(Project)
+            .where(
+                Project.id == project_id,
+                Project.user_memberships.any(ProjectMember.user_id == user_id),
+            )
+            .options(
+                selectinload(Project.owner),
+                selectinload(Project.user_memberships).selectinload(ProjectMember.user),
+                selectinload(Project.documents),
+            )
+            .execution_options(populate_existing=True)
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, user_id: uuid.UUID):
+    async def update(
+        self,
+        project_id: uuid.UUID,
+        project_data: ProjectUpdateSchema,
+        user_id: uuid.UUID,
+    ):
         project = await self.get_if_user_member(project_id, user_id)
         if not project:
             return None
@@ -77,17 +99,17 @@ class ProjectRepository(IProjectRepository):
         await self.session.delete(project)
         await self.session.commit()
 
-
-    async def save_members_with_permission(self,project_member: ProjectMember):
+    async def save_members_with_permission(self, project_member: ProjectMember):
         self.session.add(project_member)
         await self.session.commit()
         await self.session.refresh(project_member, attribute_names=["user"])
         return project_member
 
-    async def get_user_permission(self, project_id: uuid.UUID, user_id: uuid.UUID) -> ProjectPermission | None:
+    async def get_user_permission(
+        self, project_id: uuid.UUID, user_id: uuid.UUID
+    ) -> ProjectPermission | None:
         stmt = select(ProjectMember.permission).where(
-            ProjectMember.project_id == project_id,
-            ProjectMember.user_id == user_id
+            ProjectMember.project_id == project_id, ProjectMember.user_id == user_id
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -97,12 +119,14 @@ class ProjectInviteRepository(IProjectInviteRepository):
     def __init__(self, redis_client: redis.Redis):
         self.redis_client = redis_client
         self.prefix = "invite:jti"
+
     def _key(self, jti: str):
         return f"{self.prefix}:{jti}"
 
-    async def save_invite_jti(self, jti: str, payload: dict,
-                              ttl_seconds: int):
-        await self.redis_client.set(self._key(jti), json.dumps(payload, default=str), ex=ttl_seconds)
+    async def save_invite_jti(self, jti: str, payload: dict, ttl_seconds: int):
+        await self.redis_client.set(
+            self._key(jti), json.dumps(payload, default=str), ex=ttl_seconds
+        )
 
     async def get_invite_jti(self, jti: str):
         raw_value = await self.redis_client.get(self._key(jti))

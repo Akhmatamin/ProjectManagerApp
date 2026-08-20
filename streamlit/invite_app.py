@@ -38,9 +38,7 @@ with tab_login:
                 join_response = requests.post(
                     f"{API_BASE}/project/join",
                     params={"token": invite_token},
-                    headers={
-                        "Authorization": f"Bearer {access_token}"
-                    },
+                    headers={"Authorization": f"Bearer {access_token}"},
                     timeout=10,
                 )
 
@@ -111,9 +109,7 @@ with tab_register:
                     join_response = requests.post(
                         f"{API_BASE}/project/join",
                         params={"token": invite_token},
-                        headers={
-                            "Authorization": f"Bearer {access_token}"
-                        },
+                        headers={"Authorization": f"Bearer {access_token}"},
                         timeout=10,
                     )
 

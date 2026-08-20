@@ -5,11 +5,12 @@ Revises: 08cb40b41fd7
 Create Date: 2026-08-05 00:55:44.644129
 
 """
+
 from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = 'e647929037a9'
-down_revision: str | Sequence[str] | None = '08cb40b41fd7'
+revision: str = "e647929037a9"
+down_revision: str | Sequence[str] | None = "08cb40b41fd7"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

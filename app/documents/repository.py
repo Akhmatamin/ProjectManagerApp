@@ -27,7 +27,6 @@ class DocumentRepository(IDocumentRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-
     async def update(self, document: Document) -> Document:
         self.session.add(document)
         await self.session.commit()

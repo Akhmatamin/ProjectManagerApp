@@ -8,7 +8,6 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestProjectInviteRepository:
-
     @pytest.fixture
     def redis_client(self):
         return AsyncMock()
@@ -27,7 +26,6 @@ class TestProjectInviteRepository:
         assert args[0] == "invite:jti:jti-1"
         assert "a@gmail.com" in args[1]
         assert kwargs["ex"] == 260000
-
 
     async def test_get_invite_jti_found(self, invite_repo, redis_client):
         redis_client.get.return_value = '{"project_id": "abc", "email": "a@gmail.com"}'

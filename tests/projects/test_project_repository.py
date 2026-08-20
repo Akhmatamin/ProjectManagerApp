@@ -35,7 +35,6 @@ def sample_project(owner_id):
 
 
 class TestSave:
-
     async def test_save(self, repo, mock_session, sample_project):
         mock_session.scalar.return_value = sample_project
 
@@ -48,7 +47,6 @@ class TestSave:
 
 
 class TestGetProjectById:
-
     async def test_get_by_id_found(self, repo, mock_session, sample_project):
         execute_result = MagicMock()
         execute_result.scalar_one_or_none.return_value = sample_project
@@ -68,7 +66,9 @@ class TestGetProjectById:
 
         assert result is None
 
-    async def test_get_by_id_with_load_documents(self, repo, mock_session, sample_project):
+    async def test_get_by_id_with_load_documents(
+        self, repo, mock_session, sample_project
+    ):
         execute_result = MagicMock()
         execute_result.scalar_one_or_none.return_value = sample_project
         mock_session.execute.return_value = execute_result
@@ -81,8 +81,9 @@ class TestGetProjectById:
 
 
 class TestGetProjectsByUserId:
-
-    async def test_get_by_user_id_returns_list(self, repo, mock_session, sample_project):
+    async def test_get_by_user_id_returns_list(
+        self, repo, mock_session, sample_project
+    ):
         scalars_result = MagicMock()
         scalars_result.unique.return_value.all.return_value = [sample_project]
         execute_result = MagicMock()
@@ -126,13 +127,14 @@ class TestGetProjectIfUserMember:
 
 
 class TestUpdateProject:
-
     async def test_update_success(self, repo, mock_session, sample_project):
         exec_result = MagicMock()
         exec_result.scalar_one_or_none.return_value = sample_project
         mock_session.execute.return_value = exec_result
 
-        data = ProjectUpdateSchema(name="renamed project", description="updated description")
+        data = ProjectUpdateSchema(
+            name="renamed project", description="updated description"
+        )
         result = await repo.update(sample_project.id, data, uuid.uuid4())
 
         assert sample_project.name == "renamed project"
@@ -154,7 +156,6 @@ class TestUpdateProject:
 
 
 class TestDelete:
-
     async def test_delete(self, repo, mock_session, sample_project):
         await repo.delete(sample_project)
 
@@ -163,10 +164,13 @@ class TestDelete:
 
 
 class TestSaveMembersWithPermission:
-
-    async def test_save_members_with_permission(self, repo, mock_session, sample_project):
+    async def test_save_members_with_permission(
+        self, repo, mock_session, sample_project
+    ):
         member = ProjectMember(
-            project_id=sample_project.id, user_id=uuid.uuid4(), permission=ProjectPermission.READ
+            project_id=sample_project.id,
+            user_id=uuid.uuid4(),
+            permission=ProjectPermission.READ,
         )
 
         result = await repo.save_members_with_permission(member)
@@ -178,7 +182,6 @@ class TestSaveMembersWithPermission:
 
 
 class TestGetUserPermission:
-
     async def test_get_user_permission_found(self, repo, mock_session):
         exec_result = MagicMock()
         exec_result.scalar_one_or_none.return_value = ProjectPermission.WRITE
@@ -196,4 +199,3 @@ class TestGetUserPermission:
         result = await repo.get_user_permission(uuid.uuid4(), uuid.uuid4())
 
         assert result is None
-

@@ -7,6 +7,7 @@ class UserRegisterSchema(BaseModel):
     email: EmailStr
     password: str
 
+
 class UserCreatedResponse(BaseModel):
     email: EmailStr
     first_name: str
@@ -14,9 +15,11 @@ class UserCreatedResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str
+
 
 class ChangePasswordSchema(BaseModel):
     old_password: str
@@ -26,11 +29,14 @@ class ChangePasswordSchema(BaseModel):
 class RefreshTokenSchema(BaseModel):
     refresh_token: str
 
+
 class CheckEmailSchema(BaseModel):
     email: EmailStr
 
+
 class RequestResetCodeSchema(BaseModel):
     email: EmailStr
+
 
 class ResetPasswordSchema(BaseModel):
     email: EmailStr

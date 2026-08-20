@@ -5,11 +5,12 @@ Revises: d339b6ccadf6
 Create Date: 2026-08-19 14:13:07.676713
 
 """
+
 from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = '467fef834be3'
-down_revision: str | Sequence[str] | None = 'd339b6ccadf6'
+revision: str = "467fef834be3"
+down_revision: str | Sequence[str] | None = "d339b6ccadf6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

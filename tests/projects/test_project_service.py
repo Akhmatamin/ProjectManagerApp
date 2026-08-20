@@ -64,7 +64,8 @@ def owner_id():
 
 @pytest.fixture
 def sample_project(owner_id):
-    project = Project(id=uuid.uuid4(),
+    project = Project(
+        id=uuid.uuid4(),
         name="My Project",
         owner_id=owner_id,
     )
@@ -80,10 +81,10 @@ def sample_user():
     return user
 
 
-
 class TestCreateProject:
-
-    async def test_create_project_success(self, service, project_repo, user_repo, owner_id):
+    async def test_create_project_success(
+        self, service, project_repo, user_repo, owner_id
+    ):
         user_repo.get_by_id.return_value = MagicMock(id=owner_id)
         new_project = Project(id=uuid.uuid4(), name="New project")
         new_project.user_memberships = []
@@ -99,8 +100,9 @@ class TestCreateProject:
         project_repo.save.assert_awaited_once_with(new_project)
         assert result == new_project
 
-
-    async def test_create_project_user_not_found(self, service, project_repo, user_repo):
+    async def test_create_project_user_not_found(
+        self, service, project_repo, user_repo
+    ):
         user_repo.get_by_id.return_value = None
         new_project = Project(id=uuid.uuid4(), name="New project")
         new_project.user_memberships = []
@@ -111,10 +113,10 @@ class TestCreateProject:
         project_repo.save.assert_not_called()
 
 
-
 class TestGetProjectsWithAccess:
-
-    async def test_get_projects_with_access_success(self, service, project_repo, sample_project):
+    async def test_get_projects_with_access_success(
+        self, service, project_repo, sample_project
+    ):
         project_repo.get_by_user_id.return_value = [sample_project]
 
         result = await service.get_projects_with_access(uuid.uuid4())
@@ -128,10 +130,10 @@ class TestGetProjectsWithAccess:
             await service.get_projects_with_access(uuid.uuid4())
 
 
-
 class TestGetProjectDetails:
-
-    async def test_get_project_details_success(self, service, project_repo, sample_project):
+    async def test_get_project_details_success(
+        self, service, project_repo, sample_project
+    ):
         project_repo.get_if_user_member.return_value = sample_project
 
         result = await service.get_project_details(sample_project.id, uuid.uuid4())
@@ -145,19 +147,23 @@ class TestGetProjectDetails:
             await service.get_project_details(uuid.uuid4(), uuid.uuid4())
 
 
-
 class TestUpdateProjectDetails:
-
-    async def test_update_project_details_success(self, service, project_repo, sample_project):
+    async def test_update_project_details_success(
+        self, service, project_repo, sample_project
+    ):
         project_repo.get_user_permission.return_value = ProjectPermission.WRITE
         project_repo.update.return_value = sample_project
         data = ProjectUpdateSchema(name="Renamed")
 
-        result = await service.update_project_details(sample_project.id, data, uuid.uuid4())
+        result = await service.update_project_details(
+            sample_project.id, data, uuid.uuid4()
+        )
 
         assert result == sample_project
 
-    async def test_update_project_details_not_member_or_missing(self, service, project_repo):
+    async def test_update_project_details_not_member_or_missing(
+        self, service, project_repo
+    ):
         project_repo.get_user_permission.return_value = None
         data = ProjectUpdateSchema(name="Renamed")
 
@@ -166,7 +172,9 @@ class TestUpdateProjectDetails:
 
         project_repo.update.assert_not_called()
 
-    async def test_update_project_details_read_permission_forbidden(self, service, project_repo):
+    async def test_update_project_details_read_permission_forbidden(
+        self, service, project_repo
+    ):
         project_repo.get_user_permission.return_value = ProjectPermission.READ
         data = ProjectUpdateSchema(name="Renamed")
 
@@ -176,10 +184,10 @@ class TestUpdateProjectDetails:
         project_repo.update.assert_not_called()
 
 
-
 class TestDeleteProject:
-
-    async def test_delete_project_success(self, service, project_repo, sample_project, owner_id):
+    async def test_delete_project_success(
+        self, service, project_repo, sample_project, owner_id
+    ):
         project_repo.get_by_id.return_value = sample_project
 
         result = await service.delete_project(sample_project.id, owner_id)
@@ -195,7 +203,9 @@ class TestDeleteProject:
 
         project_repo.delete.assert_not_called()
 
-    async def test_delete_project_not_owner(self, service, project_repo, sample_project):
+    async def test_delete_project_not_owner(
+        self, service, project_repo, sample_project
+    ):
         project_repo.get_by_id.return_value = sample_project
 
         with pytest.raises(AccessDenied):
@@ -204,16 +214,16 @@ class TestDeleteProject:
         project_repo.delete.assert_not_called()
 
 
-
 class TestInviteMember:
-
-    async def test_invite_member_success(self, service, project_repo, user_repo,
-                                          sample_project, sample_user, owner_id):
+    async def test_invite_member_success(
+        self, service, project_repo, user_repo, sample_project, sample_user, owner_id
+    ):
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_email.return_value = sample_user
         project_repo.get_user_permission.return_value = None
         saved_member = ProjectMember(
-            project_id=sample_project.id, user_id=sample_user.id,
+            project_id=sample_project.id,
+            user_id=sample_user.id,
             permission=ProjectPermission.READ,
         )
         project_repo.save_members_with_permission.return_value = saved_member
@@ -232,7 +242,9 @@ class TestInviteMember:
         project_repo.get_by_id.return_value = None
 
         with pytest.raises(ProjectNotFound):
-            await service.invite_member(uuid.uuid4(), "a@test.com", uuid.uuid4(), ProjectPermission.READ)
+            await service.invite_member(
+                uuid.uuid4(), "a@test.com", uuid.uuid4(), ProjectPermission.READ
+            )
 
     async def test_invite_member_not_owner(self, service, project_repo, sample_project):
         project_repo.get_by_id.return_value = sample_project
@@ -242,8 +254,9 @@ class TestInviteMember:
                 sample_project.id, "a@test.com", uuid.uuid4(), ProjectPermission.READ
             )
 
-    async def test_invite_member_user_not_found(self, service, project_repo, user_repo,
-                                                  sample_project, owner_id):
+    async def test_invite_member_user_not_found(
+        self, service, project_repo, user_repo, sample_project, owner_id
+    ):
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_email.return_value = None
 
@@ -252,8 +265,9 @@ class TestInviteMember:
                 sample_project.id, "test@test.com", owner_id, ProjectPermission.READ
             )
 
-    async def test_invite_member_already_member(self, service, project_repo, user_repo,
-                                                 sample_project, sample_user, owner_id):
+    async def test_invite_member_already_member(
+        self, service, project_repo, user_repo, sample_project, sample_user, owner_id
+    ):
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_email.return_value = sample_user
         project_repo.get_user_permission.return_value = ProjectPermission.READ
@@ -266,15 +280,25 @@ class TestInviteMember:
         project_repo.save_members_with_permission.assert_not_called()
 
 
-
 class TestShareProjectLink:
-
-    async def test_share_project_link_success(self, service, project_repo, invite_repo,
-                                                email_service, settings, sample_project, owner_id):
+    async def test_share_project_link_success(
+        self,
+        service,
+        project_repo,
+        invite_repo,
+        email_service,
+        settings,
+        sample_project,
+        owner_id,
+    ):
         project_repo.get_by_id.return_value = sample_project
 
-        with patch("app.projects.service.create_invite_token", return_value="signed-token") as mock_create, \
-             patch("app.projects.service.uuid.uuid4", return_value=uuid.UUID(int=1)):
+        with (
+            patch(
+                "app.projects.service.create_invite_token", return_value="signed-token"
+            ) as mock_create,
+            patch("app.projects.service.uuid.uuid4", return_value=uuid.UUID(int=1)),
+        ):
             result = await service.share_project_link(
                 sample_project.id, "invite@test.com", owner_id, ProjectPermission.READ
             )
@@ -302,7 +326,9 @@ class TestShareProjectLink:
                 uuid.uuid4(), "a@test.com", uuid.uuid4(), ProjectPermission.READ
             )
 
-    async def test_share_project_link_not_owner(self, service, project_repo, sample_project):
+    async def test_share_project_link_not_owner(
+        self, service, project_repo, sample_project
+    ):
         project_repo.get_by_id.return_value = sample_project
 
         with pytest.raises(AccessDenied):
@@ -311,27 +337,32 @@ class TestShareProjectLink:
             )
 
 
-
 class TestJoinProjectByToken:
-
-    def _decoded_payload(self, project_id, permission=ProjectPermission.READ, jti="jti-1"):
+    def _decoded_payload(
+        self, project_id, permission=ProjectPermission.READ, jti="jti-1"
+    ):
         return {
             "project_id": str(project_id),
             "permission": permission.value,
             "jti": jti,
         }
 
-    async def test_join_project_by_token_success(self, service, project_repo, user_repo, invite_repo,
-                                                   sample_project, sample_user):
+    async def test_join_project_by_token_success(
+        self, service, project_repo, user_repo, invite_repo, sample_project, sample_user
+    ):
         payload = self._decoded_payload(sample_project.id)
-        invite_data = {"email": sample_user.email, "project_id": str(sample_project.id),
-                       "permission": ProjectPermission.READ.value}
+        invite_data = {
+            "email": sample_user.email,
+            "project_id": str(sample_project.id),
+            "permission": ProjectPermission.READ.value,
+        }
         invite_repo.get_invite_jti.return_value = invite_data
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_id.return_value = sample_user
         project_repo.get_user_permission.return_value = None
         saved_member = ProjectMember(
-            project_id=sample_project.id, user_id=sample_user.id,
+            project_id=sample_project.id,
+            user_id=sample_user.id,
             permission=ProjectPermission.READ,
         )
         project_repo.save_members_with_permission.return_value = saved_member
@@ -345,65 +376,71 @@ class TestJoinProjectByToken:
             "project_id": saved_member.project_id,
         }
 
-    async def test_join_project_by_token_invalid_link(self, service, invite_repo, sample_project):
+    async def test_join_project_by_token_invalid_link(
+        self, service, invite_repo, sample_project
+    ):
         payload = self._decoded_payload(sample_project.id)
         invite_repo.get_invite_jti.return_value = None
 
-        with(
+        with (
             patch("app.projects.service.decode_invite_token", return_value=payload),
-            pytest.raises(InvalidLink)
+            pytest.raises(InvalidLink),
         ):
             await service.join_project_by_token("token-value", uuid.uuid4())
 
-    async def test_join_project_by_token_project_not_found(self, service, project_repo, invite_repo,
-                                                             sample_project):
+    async def test_join_project_by_token_project_not_found(
+        self, service, project_repo, invite_repo, sample_project
+    ):
         payload = self._decoded_payload(sample_project.id)
         invite_repo.get_invite_jti.return_value = {"email": None}
         project_repo.get_by_id.return_value = None
 
-        with(
+        with (
             patch("app.projects.service.decode_invite_token", return_value=payload),
-            pytest.raises(ProjectNotFound)
+            pytest.raises(ProjectNotFound),
         ):
             await service.join_project_by_token("token-value", uuid.uuid4())
 
-    async def test_join_project_by_token_user_not_found(self, service, project_repo, user_repo,
-                                                          invite_repo, sample_project):
+    async def test_join_project_by_token_user_not_found(
+        self, service, project_repo, user_repo, invite_repo, sample_project
+    ):
         payload = self._decoded_payload(sample_project.id)
         invite_repo.get_invite_jti.return_value = {"email": None}
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_id.return_value = None
 
-        with(
+        with (
             patch("app.projects.service.decode_invite_token", return_value=payload),
-            pytest.raises(UserNotFound)
+            pytest.raises(UserNotFound),
         ):
             await service.join_project_by_token("token-value", uuid.uuid4())
 
-    async def test_join_project_by_token_email_mismatch(self, service, project_repo, user_repo,
-                                                          invite_repo, sample_project, sample_user):
+    async def test_join_project_by_token_email_mismatch(
+        self, service, project_repo, user_repo, invite_repo, sample_project, sample_user
+    ):
         payload = self._decoded_payload(sample_project.id)
         invite_repo.get_invite_jti.return_value = {"email": "someone@test.com"}
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_id.return_value = sample_user
 
-        with(
+        with (
             patch("app.projects.service.decode_invite_token", return_value=payload),
-            pytest.raises(AccessDenied)
+            pytest.raises(AccessDenied),
         ):
             await service.join_project_by_token("token-value", sample_user.id)
 
-    async def test_join_project_by_token_already_member(self, service, project_repo, user_repo,
-                                                          invite_repo, sample_project, sample_user):
+    async def test_join_project_by_token_already_member(
+        self, service, project_repo, user_repo, invite_repo, sample_project, sample_user
+    ):
         payload = self._decoded_payload(sample_project.id)
         invite_repo.get_invite_jti.return_value = {"email": sample_user.email}
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_id.return_value = sample_user
         project_repo.get_user_permission.return_value = ProjectPermission.READ
 
-        with(
+        with (
             patch("app.projects.service.decode_invite_token", return_value=payload),
-            pytest.raises(UserAlreadyMember)
+            pytest.raises(UserAlreadyMember),
         ):
             await service.join_project_by_token("token-value", sample_user.id)
 

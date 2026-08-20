@@ -27,7 +27,6 @@ def sample_document():
 
 
 class TestSave:
-
     async def test_save(self, repo, mock_session, sample_document):
         result = await repo.save(sample_document)
 
@@ -38,8 +37,9 @@ class TestSave:
 
 
 class TestGetByProjectId:
-
-    async def test_get_by_project_id_returns_list(self, repo, mock_session, sample_document):
+    async def test_get_by_project_id_returns_list(
+        self, repo, mock_session, sample_document
+    ):
         scalars_result = MagicMock()
         scalars_result.all.return_value = [sample_document]
         exec_result = MagicMock()
@@ -64,7 +64,6 @@ class TestGetByProjectId:
 
 
 class TestGetById:
-
     async def test_get_by_id_found(self, repo, mock_session, sample_document):
         exec_result = MagicMock()
         exec_result.scalar_one_or_none.return_value = sample_document
@@ -85,7 +84,6 @@ class TestGetById:
 
 
 class TestUpdate:
-
     async def test_update(self, repo, mock_session, sample_document):
         result = await repo.update(sample_document)
 
@@ -96,7 +94,6 @@ class TestUpdate:
 
 
 class TestDelete:
-
     async def test_delete(self, repo, mock_session, sample_document):
         await repo.delete(sample_document)
 

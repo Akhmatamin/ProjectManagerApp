@@ -18,4 +18,4 @@ def setup_storage():
     except ContainerDoesNotExistError:
         container = driver.create_container(container_name=container_name)
 
-    StorageManager.add_storage('default', container)
+    StorageManager.add_storage("default", container)

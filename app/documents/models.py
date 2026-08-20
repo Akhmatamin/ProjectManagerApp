@@ -12,12 +12,17 @@ if TYPE_CHECKING:
     from app.projects.models import Project
 
 
-
 class Document(Base):
     __tablename__ = "documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     file: Mapped[dict] = mapped_column(FileField)
 
-    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),ForeignKey("projects.id"))
-    project_document: Mapped['Project'] = relationship('Project', back_populates="documents")
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("projects.id")
+    )
+    project_document: Mapped["Project"] = relationship(
+        "Project", back_populates="documents"
+    )

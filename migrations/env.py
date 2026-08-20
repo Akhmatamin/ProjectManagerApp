@@ -19,8 +19,6 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-
-
 def run_migrations_offline() -> None:
 
     url = config.get_main_option("sqlalchemy.url")
@@ -56,7 +54,6 @@ async def run_async_migrations():
 
 def run_migrations_online() -> None:
     asyncio.run(run_async_migrations())
-
 
 
 if context.is_offline_mode():

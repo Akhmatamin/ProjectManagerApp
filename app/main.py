@@ -22,6 +22,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+
 def create_app():
     app = FastAPI(title="Project Manager API", lifespan=lifespan)
     container = make_async_container(AppProvider(), FastapiProvider())
@@ -43,6 +44,7 @@ def create_app():
     app.include_router(project_router)
     app.include_router(document_router)
     return app
+
 
 app = create_app()
 
