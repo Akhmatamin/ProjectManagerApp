@@ -1,21 +1,21 @@
-import uvicorn
 import logging
+
+import uvicorn
 from dishka import make_async_container
 from dishka.integrations.fastapi import FastapiProvider, setup_dishka
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.shared.middleware import RequestLoggingMiddleware
+
 import app.models
 from app.auth.router import auth_router
 from app.documents.router import document_router
 from app.lifespan import lifespan
 from app.projects.router import project_router, projects_router
-from app.shared.health import health_router
 from app.shared.container_dishka import AppProvider
 from app.shared.exceptions import BaseAppException
 from app.shared.handlers import base_app_exception_handler
-
-
+from app.shared.health import health_router
+from app.shared.middleware import RequestLoggingMiddleware
 
 logging.basicConfig(
     level=logging.INFO,
