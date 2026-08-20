@@ -4,12 +4,12 @@ from app.shared.db.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import (String, DateTime, Text, ForeignKey, Enum as SQLEnum)
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy_file import FileField
 from datetime import datetime, timezone
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.users.models import User
+    from app.documents.models import Document
 
 
 class ProjectPermission(str, PyEnum):
@@ -53,12 +53,3 @@ class Project(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                   default=lambda: datetime.now(timezone.utc),
                                                   onupdate=lambda: datetime.now(timezone.utc))
-
-class Document(Base):
-    __tablename__ = "documents"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-    file: Mapped[dict] = mapped_column(FileField)
-
-    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),ForeignKey("projects.id"))
-    project_document: Mapped['Project'] = relationship('Project', back_populates="documents")

@@ -1,14 +1,20 @@
-from app.shared.config import get_settings
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker, AsyncEngine
+from contextlib import asynccontextmanager
 
-settings = get_settings()
+def create_engine(db_url: str, echo: bool = False):
+    return create_async_engine(db_url, echo=echo)
 
-engine = create_async_engine(settings.database_url)
-AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
-async def get_db_session():
-    async with AsyncSessionLocal() as session:
+def create_session_maker(engine: AsyncEngine):
+    return async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
+
+
+@asynccontextmanager
+async def session_scope(async_session_maker: async_sessionmaker[AsyncSession]):
+    async with async_session_maker() as session:
         try:
             yield session
-        finally:
-            await session.close()
+        except Exception:
+            await session.rollback()
+            raise
+

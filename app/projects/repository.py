@@ -5,30 +5,28 @@ import redis.asyncio as redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from app.projects.interfaces.repository import IProjectRepository, IDocumentRepository, IProjectInviteRepository
-from app.projects.models import Project, Document, ProjectPermission, ProjectMember
+from app.projects.interfaces.repository import IProjectRepository, IProjectInviteRepository
+from app.projects.models import Project, ProjectPermission, ProjectMember
 from app.projects.schemas import ProjectUpdateSchema
 
-class ProjectRepository(IProjectRepository):
-    def __init__(self, db: AsyncSession):
-        self.db = db
 
+class ProjectRepository(IProjectRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def save(self, new_project: Project):
-        try:
-            self.db.add(new_project)
-            await self.db.commit()
-            await self.db.refresh(
-                new_project,
-                attribute_names=["owner", "user_memberships", "documents"]
-            )
-            return new_project
-        except Exception:
-            await self.db.rollback()
-            raise
+        self.session.add(new_project)
+        await self.session.commit()
+        await self.session.refresh(new_project)
+        stmt = select(Project).where(Project.id == new_project.id).options(
+            selectinload(Project.owner),
+            selectinload(Project.documents),
+            selectinload(Project.user_memberships).selectinload(ProjectMember.user),
+        )
+        return await self.session.scalar(stmt)
 
 
-    async def get_by_id(self, project_id: uuid.UUID, load_documents: bool = False):
+    async def get_by_id(self, project_id: uuid.UUID, load_documents: bool = False) -> Project | None:
         options = [
             selectinload(Project.owner),
             selectinload(Project.user_memberships).selectinload(ProjectMember.user),
@@ -37,9 +35,8 @@ class ProjectRepository(IProjectRepository):
             options.append(selectinload(Project.documents))
 
         stmt = select(Project).where(Project.id == project_id).options(*options)
-        result = await self.db.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
-
 
     async def get_by_user_id(self, user_id: uuid.UUID):
         stmt = (select(Project).where(Project.user_memberships.any(ProjectMember.user_id == user_id)).options(
@@ -47,9 +44,8 @@ class ProjectRepository(IProjectRepository):
             selectinload(Project.documents),
             selectinload(Project.user_memberships).selectinload(ProjectMember.user),
         ).execution_options(populate_existing=True))
-        result = await self.db.execute(stmt)
+        result = await self.session.execute(stmt)
         return list(result.scalars().unique().all())
-
 
     async def get_if_user_member(self, project_id: uuid.UUID, user_id: uuid.UUID):
         stmt = (select(Project).where(Project.id == project_id,
@@ -58,7 +54,7 @@ class ProjectRepository(IProjectRepository):
             selectinload(Project.user_memberships).selectinload(ProjectMember.user),
             selectinload(Project.documents),
         ).execution_options(populate_existing=True))
-        result = await self.db.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def update(self, project_id: uuid.UUID, project_data: ProjectUpdateSchema, user_id: uuid.UUID):
@@ -69,25 +65,19 @@ class ProjectRepository(IProjectRepository):
         update_data = project_data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(project, key, value)
-        await self.db.commit()
-        await self.db.refresh(project)
+        await self.session.commit()
+        await self.session.refresh(project)
         return project
 
-
     async def delete(self, project: Project):
-        await self.db.delete(project)
-        await self.db.commit()
+        await self.session.delete(project)
+        await self.session.commit()
 
-
-    # async def save_members(self, project: Project, member: User):
-    #     project.members.append(member)
-    #     await self.db.commit()
-    #     await self.db.refresh(project)
-    #     return project
 
     async def save_members_with_permission(self,project_member: ProjectMember):
-        self.db.add(project_member)
-        await self.db.commit()
+        self.session.add(project_member)
+        await self.session.commit()
+        await self.session.refresh(project_member, attribute_names=["user"])
         return project_member
 
     async def get_user_permission(self, project_id: uuid.UUID, user_id: uuid.UUID) -> ProjectPermission | None:
@@ -95,7 +85,7 @@ class ProjectRepository(IProjectRepository):
             ProjectMember.project_id == project_id,
             ProjectMember.user_id == user_id
         )
-        result = await self.db.execute(stmt)
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
 
@@ -118,36 +108,3 @@ class ProjectInviteRepository(IProjectInviteRepository):
 
     async def delete_invite_jti(self, jti: str):
         await self.redis_client.delete(self._key(jti))
-
-
-
-class DocumentRepository(IDocumentRepository):
-    def __init__(self, db: AsyncSession):
-        self.db = db
-
-    async def save(self, new_document: Document):
-        self.db.add(new_document)
-        await self.db.commit()
-        await self.db.refresh(new_document)
-        return new_document
-
-    async def get_by_project_id(self, project_id: uuid.UUID):
-        stmt = select(Document).where(Document.project_id == project_id)
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
-
-    async def get_by_id(self, document_id: uuid.UUID):
-        stmt = select(Document).where(Document.id == document_id)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
-
-
-    async def update(self, document: Document) -> Document:
-        self.db.add(document)
-        await self.db.commit()
-        await self.db.refresh(document)
-        return document
-
-    async def delete(self, document: Document):
-        await self.db.delete(document)
-        await self.db.commit()

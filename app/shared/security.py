@@ -2,7 +2,7 @@ import uuid
 
 import jwt
 from fastapi.concurrency import run_in_threadpool
-from app.shared.exceptions import InvalidLink, InvalidToken, TokenExpired
+from app.shared.exceptions import InvalidToken, TokenExpired
 from app.projects.models import ProjectPermission
 from app.shared.config import get_settings
 from pwdlib import PasswordHash
@@ -40,7 +40,7 @@ async def create_refresh_token(data: dict):
 
 
 def create_invite_token(project_id: uuid.UUID, permission: ProjectPermission,
-                        jti: str, expires_in_seconds: int = 12):
+                        jti: str, expires_in_seconds: int = 260000): #3 days approximately
     expire = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
 
     payload = {
