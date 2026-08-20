@@ -1,18 +1,29 @@
-import uuid
 import random
-from .exceptions import (EmailAlreadyExists, InvalidCredentials,
-                         InvalidRefreshToken, ExpiredRefreshToken, InvalidPassword,
-                         InvalidEmail, InvalidResetCode)
-from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
-from .schemas import UserRegisterSchema, UserLoginSchema, ChangePasswordSchema
-from app.users.models import User
-from app.auth.interfaces.service import IAuthService, IEmailService
-from .utils import token_expired
-from app.shared.security import (get_password_hash, verify_password,
-                                 create_access_token, create_refresh_token)
-from app.shared.config import Settings
-from ..shared.client import ResendAPIClient
+import uuid
 
+from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
+from app.auth.interfaces.service import IAuthService, IEmailService
+from app.shared.config import Settings
+from app.shared.security import (
+    create_access_token,
+    create_refresh_token,
+    get_password_hash,
+    verify_password,
+)
+from app.users.models import User
+
+from ..shared.client import ResendAPIClient
+from .exceptions import (
+    EmailAlreadyExists,
+    ExpiredRefreshToken,
+    InvalidCredentials,
+    InvalidEmail,
+    InvalidPassword,
+    InvalidRefreshToken,
+    InvalidResetCode,
+)
+from .schemas import ChangePasswordSchema, UserLoginSchema, UserRegisterSchema
+from .utils import token_expired
 
 
 class EmailService(IEmailService):
@@ -90,7 +101,7 @@ class AuthService(IAuthService):
         return await self._new_token_pair(stored_token.user_id)
 
 
-    async def change_password(self, user: User, password_data: ChangePasswordSchema):
+    async def change_password(self, user: User, password_data: ChangePasswordSchema) -> None:
         if not await verify_password(password_data.old_password, user.hashed_password):
             raise InvalidPassword()
 
@@ -99,7 +110,7 @@ class AuthService(IAuthService):
         await self.user_repo.delete_user_token_by_id(user.id)
 
 
-    async def request_reset_code(self, email: str):
+    async def request_reset_code(self, email: str)-> dict:
         user = await self.user_repo.get_user_by_email(email)
         if not user:
             raise InvalidEmail()
@@ -108,9 +119,9 @@ class AuthService(IAuthService):
         await self.email_service.send_reset_code(email, str(code))
         await self.redis_repo.save_code(email, str(code), expiration_time=self.settings.reset_code_expire_seconds)
 
-        return {"message": f"Reset code sent to email."}
+        return {"message": "Reset code sent to email."}
 
-    async def reset_password(self, email: str, code: str, new_password: str):
+    async def reset_password(self, email: str, code: str, new_password: str) -> dict:
         stored_code = await self.redis_repo.get_code(email)
         if not stored_code or stored_code != code:
             raise InvalidResetCode()

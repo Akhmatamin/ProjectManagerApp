@@ -1,12 +1,21 @@
 from typing import Annotated
 
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
-from fastapi import APIRouter, Depends, status, HTTPException
-from app.users.models import User
+from fastapi import APIRouter, Depends, status
+
 from app.auth.interfaces.service import IAuthService
-from .schemas import (UserRegisterSchema, UserCreatedResponse,UserLoginSchema,
-                      ChangePasswordSchema, RefreshTokenSchema, RequestResetCodeSchema, ResetPasswordSchema)
 from app.shared.dependencies import get_current_user
+from app.users.models import User
+
+from .schemas import (
+    ChangePasswordSchema,
+    RefreshTokenSchema,
+    RequestResetCodeSchema,
+    ResetPasswordSchema,
+    UserCreatedResponse,
+    UserLoginSchema,
+    UserRegisterSchema,
+)
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"], route_class=DishkaRoute)
 

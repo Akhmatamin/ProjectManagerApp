@@ -1,18 +1,25 @@
 import uuid
 
 from app.auth.interfaces.service import IEmailService
+from app.projects.exceptions import (
+    AccessDenied,
+    NotImplementedYet,
+    NotMemberOrNoProject,
+    ProjectNotFound,
+    UserAlreadyMember,
+    UserNotFound,
+)
+from app.projects.interfaces.repository import (
+    IProjectInviteRepository,
+    IProjectRepository,
+)
 from app.projects.interfaces.service import IProjectService
-from app.projects.interfaces.repository import IProjectRepository, IProjectInviteRepository
+from app.projects.models import Project, ProjectMember, ProjectPermission
+from app.projects.schemas import ProjectUpdateSchema
 from app.shared.config import Settings
 from app.shared.exceptions import InvalidLink
 from app.shared.security import create_invite_token, decode_invite_token
 from app.users.interfaces.repository import IUserRepository
-from app.projects.models import Project, ProjectMember, ProjectPermission
-from app.projects.schemas import ProjectUpdateSchema
-from app.projects.exceptions import (ProjectNotFound,
-                                     NotMemberOrNoProject, AccessDenied,
-                                     UserAlreadyMember, UserNotFound, NotImplementedYet)
-
 
 
 class ProjectService(IProjectService):
@@ -130,7 +137,7 @@ class ProjectService(IProjectService):
             return {
                 "message": f"Email for invite sent to user: {email}"
             }
-        except Exception:
+        except Exception: # noqa: BLE001
             raise NotImplementedYet()
 
 

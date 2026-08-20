@@ -1,6 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
+
 class IDocumentService(ABC):
     @abstractmethod
     async def upload_document(self, file, project_id: uuid.UUID, current_user_id: uuid.UUID):
@@ -25,7 +26,7 @@ class IDocumentService(ABC):
 
 class IS3Service(ABC):
     @abstractmethod
-    async def generate_upload_url(self, file_name: str, content_type: str) -> str:
+    async def generate_upload_url(self, file_name: str, content_type: str) -> dict:
         pass
 
     @abstractmethod

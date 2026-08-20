@@ -1,7 +1,8 @@
 from unittest.mock import AsyncMock
-import pytest
-from app.projects.repository import ProjectInviteRepository
 
+import pytest
+
+from app.projects.repository import ProjectInviteRepository
 
 pytestmark = pytest.mark.asyncio
 

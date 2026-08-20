@@ -1,8 +1,7 @@
 from app.auth.models import RefreshToken
-from app.users.models import User
-from app.projects.models import Project
 from app.documents.models import Document
+from app.projects.models import Project
 from app.shared.db.base import Base
+from app.users.models import User
 
-
-__all__ = ["Base", "RefreshToken", "User", "Project", "Document"]
+__all__ = ["Base", "Document", "Project", "RefreshToken", "User"]

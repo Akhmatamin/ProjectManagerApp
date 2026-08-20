@@ -1,12 +1,15 @@
-import jwt
 import uuid
-from fastapi import Depends, HTTPException, status
+
+import jwt
 from dishka.integrations.fastapi import FromDishka, inject
-from jwt.exceptions import InvalidTokenError
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt.exceptions import InvalidTokenError
+
 from app.auth.interfaces.repository import IAuthRepository
 from app.shared.config import Settings
 from app.users.models import User
+
 token_security = HTTPBearer()
 
 
@@ -24,10 +27,15 @@ async def get_current_user(
     )
 
     token = credentials.credentials
+
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        user_id_str: str = payload.get("sub")
-        if user_id_str is None:
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[settings.algorithm],
+        )
+        user_id_str = payload.get("sub")
+        if not isinstance(user_id_str, str):
             raise credentials_exception
         user_id = uuid.UUID(user_id_str)
 

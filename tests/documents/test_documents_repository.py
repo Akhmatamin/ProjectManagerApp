@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.documents.repository import DocumentRepository
 from app.documents.models import Document
+from app.documents.repository import DocumentRepository
 
 pytestmark = pytest.mark.asyncio
 

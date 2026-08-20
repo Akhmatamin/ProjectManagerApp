@@ -46,6 +46,21 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -t my-backend-app:latest .
+      
+      - name: Run Ruff
+        run: |
+          docker run --rm my-backend-app:latest \
+            uv run ruff check .
+
+      - name: Check Ruff formatting
+        run: |
+          docker run --rm my-backend-app:latest \
+            uv run ruff format --check .
+
+      - name: Run mypy
+        run: |
+          docker run --rm my-backend-app:latest \
+            uv run mypy app
         
       - name: Run Tests
         env:

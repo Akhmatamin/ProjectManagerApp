@@ -1,11 +1,12 @@
 import uuid
-from app.shared.db.base import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, String, DateTime
-from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.shared.db.base import Base
 
 if TYPE_CHECKING:
     from app.users.models import User
@@ -20,6 +21,6 @@ class RefreshToken(Base):
     token_user: Mapped['User'] = relationship("User", back_populates="user_tokens")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
-                                                 default=lambda: datetime.now(timezone.utc),
-                                                 onupdate=lambda: datetime.now(timezone.utc),
+                                                 default=lambda: datetime.now(UTC),
+                                                 onupdate=lambda: datetime.now(UTC),
                                                  nullable=False)

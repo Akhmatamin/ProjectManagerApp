@@ -1,12 +1,13 @@
 import uuid
 
 import redis.asyncio as redis
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import RefreshToken
 from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
 from app.users.models import User
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+
+from .models import RefreshToken
 
 
 class AuthRepository(IAuthRepository):
@@ -74,8 +75,16 @@ class RedisRepository(IRedisRepository):
     async def save_code(self, email: str, code: str, expiration_time: int) -> None:
         await self.redis_client.set(f'reset:{email}', code, ex=expiration_time)
 
-    async def get_code(self, email:str)-> str | None:
-        return await self.redis_client.get(f'reset:{email}')
+    async def get_code(self, email: str) -> str | None:
+        value = await self.redis_client.get(f"reset:{email}")
+
+        if value is None:
+            return None
+
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
+
+        return value
 
     async def delete_code(self, email: str) -> None:
         await self.redis_client.delete(f'reset:{email}')

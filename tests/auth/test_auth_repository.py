@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.auth.repository import AuthRepository
 from app.auth.models import RefreshToken
+from app.auth.repository import AuthRepository
 from app.users.models import User
 
 pytestmark = pytest.mark.asyncio

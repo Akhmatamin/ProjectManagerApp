@@ -1,24 +1,27 @@
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
+
 from dishka import Provider, Scope, provide
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from app.shared.config import Settings, get_settings
-from app.shared.db.database import create_engine, create_session_maker, session_scope
-from app.shared.client import ResendAPIClient
-
-from app.auth.repository import AuthRepository, RedisRepository
 from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
 from app.auth.interfaces.service import IAuthService, IEmailService
+from app.auth.repository import AuthRepository, RedisRepository
 from app.auth.service import AuthService, EmailService
-from app.documents.repository import DocumentRepository
 from app.documents.interfaces.repository import IDocumentRepository
 from app.documents.interfaces.service import IDocumentService, IS3Service
+from app.documents.repository import DocumentRepository
 from app.documents.service import DocumentService, S3Service
-from app.projects.interfaces.repository import IProjectRepository, IProjectInviteRepository
+from app.projects.interfaces.repository import (
+    IProjectInviteRepository,
+    IProjectRepository,
+)
 from app.projects.interfaces.service import IProjectService
-from app.projects.repository import ProjectRepository, ProjectInviteRepository
+from app.projects.repository import ProjectInviteRepository, ProjectRepository
 from app.projects.service import ProjectService
+from app.shared.client import ResendAPIClient
+from app.shared.config import Settings, get_settings
+from app.shared.db.database import create_engine, create_session_maker, session_scope
 from app.users.interfaces.repository import IUserRepository
 from app.users.repository import UserRepository
 

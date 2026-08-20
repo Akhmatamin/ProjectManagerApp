@@ -1,16 +1,17 @@
 import uuid
+
 import aioboto3
 from fastapi import UploadFile
 from sqlalchemy_file import File as SQLFile
-from app.documents.interfaces.service import IDocumentService, IS3Service
-from app.projects.interfaces.repository import IProjectRepository
-from app.documents.interfaces.repository import IDocumentRepository
-from app.documents.models import Document
-from app.projects.exceptions import NotMemberOrNoProject, AccessDenied, FileKeyMissing
-from app.projects.models import ProjectPermission
-from app.documents.exceptions import DocumentNotFound, FileTooLarge
-from app.shared.config import Settings
 
+from app.documents.exceptions import DocumentNotFound, FileTooLarge
+from app.documents.interfaces.repository import IDocumentRepository
+from app.documents.interfaces.service import IDocumentService, IS3Service
+from app.documents.models import Document
+from app.projects.exceptions import AccessDenied, FileKeyMissing, NotMemberOrNoProject
+from app.projects.interfaces.repository import IProjectRepository
+from app.projects.models import ProjectPermission
+from app.shared.config import Settings
 
 
 class DocumentService(IDocumentService):
@@ -21,12 +22,13 @@ class DocumentService(IDocumentService):
         self.s3_service = s3_service
 
     @staticmethod
-    async def _calculate_size(file: UploadFile):
+    def _is_file_too_large(file: UploadFile) -> bool:
         max_file_size = 200 * 1024 * 1024
-        file_size = file.size
-        print(file_size)
-        if file_size < max_file_size:
-            return True
+
+        if file.size is None:
+            return False
+
+        return file.size > max_file_size
 
     async def _ensure_write_permission(self, project_id: uuid.UUID, current_user_id: uuid.UUID):
         permission = await self.project_repo.get_user_permission(project_id, current_user_id)
@@ -39,7 +41,7 @@ class DocumentService(IDocumentService):
     async def upload_document(self, new_file, project_id: uuid.UUID, current_user_id: uuid.UUID):
         await self._ensure_write_permission(project_id, current_user_id)
 
-        if not await self._calculate_size(new_file):
+        if self._is_file_too_large(new_file):
             raise FileTooLarge()
 
         file_attached = SQLFile(
@@ -110,6 +112,8 @@ class DocumentService(IDocumentService):
             raise DocumentNotFound()
         await self._ensure_write_permission(document.project_id, current_user_id)
 
+        if self._is_file_too_large(new_file):
+            raise FileTooLarge()
 
         document.file = SQLFile(
             content=new_file.file,
@@ -135,8 +139,6 @@ class DocumentService(IDocumentService):
         await self.document_repo.delete(document)
 
         return {"message": "Document deleted successfully"}
-
-
 
 
 

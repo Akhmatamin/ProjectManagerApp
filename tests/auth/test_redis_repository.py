@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from app.auth.repository import RedisRepository
 
@@ -26,7 +27,7 @@ class TestRedisRepository:
 
         result = await redis_repo.get_code('user@gmail.com')
 
-        redis_client.get.assert_awaited_once_with(f'reset:user@gmail.com')
+        redis_client.get.assert_awaited_once_with('reset:user@gmail.com')
         assert result == '2222'
 
     async def test_get_code_not_exists(self, redis_repo, redis_client):

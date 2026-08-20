@@ -1,5 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
+
 from app.users.models import User
 
 

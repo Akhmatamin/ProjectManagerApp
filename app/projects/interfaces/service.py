@@ -1,7 +1,8 @@
 import uuid
 from abc import ABC, abstractmethod
-from app.projects.schemas import ProjectUpdateSchema
+
 from app.projects.models import Project, ProjectPermission
+from app.projects.schemas import ProjectUpdateSchema
 
 
 class IProjectService(ABC):

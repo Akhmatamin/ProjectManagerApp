@@ -1,5 +1,6 @@
 from app.shared.exceptions import BaseAppException
 
+
 class InvalidProjectMembers(BaseAppException):
     def __init__(self, message:str = "Some members doesn't exist"):
         super().__init__(message, status_code=400)

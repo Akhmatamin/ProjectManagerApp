@@ -1,15 +1,18 @@
 import uuid
+from datetime import UTC, datetime
 from enum import Enum as PyEnum
-from app.shared.db.base import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import (String, DateTime, Text, ForeignKey, Enum as SQLEnum)
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from datetime import datetime, timezone
-from typing import List, Optional, TYPE_CHECKING
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.shared.db.base import Base
 
 if TYPE_CHECKING:
-    from app.users.models import User
     from app.documents.models import Document
+    from app.users.models import User
 
 
 class ProjectPermission(str, PyEnum):
@@ -35,21 +38,21 @@ class Project(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(32), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),ForeignKey("users.id"))  
     owner: Mapped['User'] = relationship('User', back_populates="user_projects")
 
 
-    user_memberships: Mapped[List['ProjectMember']] = relationship('ProjectMember', back_populates='project',
+    user_memberships: Mapped[list['ProjectMember']] = relationship('ProjectMember', back_populates='project',
                                                                    cascade="all, delete-orphan")
 
 
-    documents: Mapped[List['Document']] = relationship('Document', back_populates="project_document",
+    documents: Mapped[list['Document']] = relationship('Document', back_populates="project_document",
                                                        cascade="all, delete-orphan")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
-                                                 default=lambda: datetime.now(timezone.utc))
+                                                 default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
-                                                  default=lambda: datetime.now(timezone.utc),
-                                                  onupdate=lambda: datetime.now(timezone.utc))
+                                                  default=lambda: datetime.now(UTC),
+                                                  onupdate=lambda: datetime.now(UTC))

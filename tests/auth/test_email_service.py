@@ -1,23 +1,9 @@
-import uuid
-from sys import path
+
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from app.auth.service import AuthService, EmailService
-from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
-from app.auth.exceptions import (
-    EmailAlreadyExists,
-    InvalidCredentials,
-    InvalidRefreshToken,
-    ExpiredRefreshToken,
-    InvalidPassword,
-    InvalidEmail,
-    InvalidResetCode,
-)
-from app.auth.schemas import UserRegisterSchema, UserLoginSchema, ChangePasswordSchema
-from app.projects.exceptions import UserNotFound
-from app.users.models import User
-from app.users.interfaces.repository import IUserRepository
+
+from app.auth.service import EmailService
 
 pytestmark = pytest.mark.asyncio
 

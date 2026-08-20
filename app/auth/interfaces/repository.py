@@ -1,8 +1,9 @@
 import uuid
 from abc import ABC, abstractmethod
-from app.auth.schemas import UserRegisterSchema
-from app.users.models import User
+
 from app.auth.models import RefreshToken
+from app.users.models import User
+
 
 class IAuthRepository(ABC):
     @abstractmethod

@@ -1,12 +1,12 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy.ext.asyncio import async_engine_from_config
-from sqlalchemy import pool
-import app.models
-from app.shared.db.base import Base
 from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
 from app.shared.config import get_settings
+from app.shared.db.base import Base
 
 settings = get_settings()
 config = context.config

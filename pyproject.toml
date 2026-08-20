@@ -31,3 +31,16 @@ dependencies = [
     "streamlit>=1.62.0",
     "uvicorn>=0.52.1",
 ]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "ruff>=0.16.3",
+]
+
+[[tool.mypy.overrides]]
+module = ["aioboto3.*"]
+ignore_missing_imports = true
+
+[tool.ruff.lint]
+ignore = ["B008"]

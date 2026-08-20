@@ -3,10 +3,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.documents.service import DocumentService
-from app.documents.models import Document
 from app.documents.exceptions import DocumentNotFound, FileTooLarge
-from app.projects.exceptions import NotMemberOrNoProject, AccessDenied
+from app.documents.models import Document
+from app.documents.service import DocumentService
+from app.projects.exceptions import AccessDenied, NotMemberOrNoProject
 from app.projects.models import ProjectPermission
 
 pytestmark = pytest.mark.asyncio

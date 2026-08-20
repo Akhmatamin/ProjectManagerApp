@@ -1,5 +1,6 @@
 from app.shared.exceptions import BaseAppException
 
+
 class EmailAlreadyExists(BaseAppException):
     def __init__(self, message: str = "Email already exists."):
         super().__init__(message, status_code=400)

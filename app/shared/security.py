@@ -1,15 +1,13 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi.concurrency import run_in_threadpool
-from app.shared.exceptions import InvalidToken, TokenExpired
+from pwdlib import PasswordHash
+
 from app.projects.models import ProjectPermission
 from app.shared.config import get_settings
-from pwdlib import PasswordHash
-from typing import Optional
-from datetime import timedelta, datetime, timezone
-
-
+from app.shared.exceptions import InvalidToken, TokenExpired
 
 settings = get_settings()
 
@@ -25,12 +23,12 @@ async def verify_password(plain_password: str, hashed_password: str) -> bool:
     return await run_in_threadpool(password_hash.verify, plain_password, hashed_password)
 
 
-async def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+async def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_lifetime)
+        expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_lifetime)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
@@ -41,7 +39,7 @@ async def create_refresh_token(data: dict):
 
 def create_invite_token(project_id: uuid.UUID, permission: ProjectPermission,
                         jti: str, expires_in_seconds: int = 260000): #3 days approximately
-    expire = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
+    expire = datetime.now(UTC) + timedelta(seconds=expires_in_seconds)
 
     payload = {
         "sub": "project_invite",

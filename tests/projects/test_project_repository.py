@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.projects.repository import ProjectRepository
 from app.projects.models import Project, ProjectMember, ProjectPermission
+from app.projects.repository import ProjectRepository
 from app.projects.schemas import ProjectUpdateSchema
 
 pytestmark = pytest.mark.asyncio

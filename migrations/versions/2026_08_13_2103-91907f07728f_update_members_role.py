@@ -5,18 +5,17 @@ Revises: d0b3576568d5
 Create Date: 2026-08-13 21:03:06.500137
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-import sqlalchemy_file
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = '91907f07728f'
-down_revision: Union[str, Sequence[str], None] = 'd0b3576568d5'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = 'd0b3576568d5'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 project_permission_enum = postgresql.ENUM('read', 'write', name='projectpermission')
 

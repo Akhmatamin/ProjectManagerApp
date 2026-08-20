@@ -1,18 +1,23 @@
 import uuid
+from typing import Annotated
 
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
-from fastapi import APIRouter, Depends, status, UploadFile, File, Query
-from typing import List
-from typing import Annotated
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+
 from app.documents.interfaces.service import IDocumentService
 from app.projects.interfaces.service import IProjectService
-from app.projects.schemas import (ProjectCreateSchema, ProjectsListSchema,
-                                  ProjectDetailsSchema, ProjectUpdateSchema,
-                                  ProjectCreatedSchema, DocumentsListSchema, InviteMemberResponse)
+from app.projects.models import Project, ProjectPermission
+from app.projects.schemas import (
+    DocumentsListSchema,
+    InviteMemberResponse,
+    ProjectCreatedSchema,
+    ProjectCreateSchema,
+    ProjectDetailsSchema,
+    ProjectsListSchema,
+    ProjectUpdateSchema,
+)
 from app.shared.dependencies import get_current_user
 from app.users.models import User
-from app.projects.models import Project, ProjectPermission
-
 
 projects_router = APIRouter(prefix="/projects", tags=["projects"], route_class=DishkaRoute)
 project_router = APIRouter(prefix="/project", tags=["project"], route_class=DishkaRoute)
@@ -101,7 +106,7 @@ async def create_document(project_id: uuid.UUID,
     return await document_service.upload_document(file, project_id, current_user.id)
 
 
-@project_router.get("/{project_id}/documents", response_model=List[DocumentsListSchema], status_code=status.HTTP_200_OK)
+@project_router.get("/{project_id}/documents", response_model=list[DocumentsListSchema], status_code=status.HTTP_200_OK)
 async def get_documents(project_id: uuid.UUID,
                         current_user: Annotated[User, Depends(get_current_user)],
                         document_service: FromDishka[IDocumentService]):

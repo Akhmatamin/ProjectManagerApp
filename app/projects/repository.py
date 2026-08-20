@@ -2,11 +2,15 @@ import json
 import uuid
 
 import redis.asyncio as redis
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from app.projects.interfaces.repository import IProjectRepository, IProjectInviteRepository
-from app.projects.models import Project, ProjectPermission, ProjectMember
+
+from app.projects.interfaces.repository import (
+    IProjectInviteRepository,
+    IProjectRepository,
+)
+from app.projects.models import Project, ProjectMember, ProjectPermission
 from app.projects.schemas import ProjectUpdateSchema
 
 

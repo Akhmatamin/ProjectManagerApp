@@ -1,8 +1,8 @@
 from libcloud.storage.drivers.s3 import S3StorageDriver
-from sqlalchemy_file.storage import StorageManager
 from libcloud.storage.types import ContainerDoesNotExistError
-from app.shared.security import settings
+from sqlalchemy_file.storage import StorageManager
 
+from app.shared.security import settings
 
 
 def setup_storage():

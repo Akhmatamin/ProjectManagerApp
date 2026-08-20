@@ -1,23 +1,21 @@
 import uuid
-from sys import path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from app.auth.service import AuthService, EmailService
-from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
+
 from app.auth.exceptions import (
     EmailAlreadyExists,
-    InvalidCredentials,
-    InvalidRefreshToken,
     ExpiredRefreshToken,
-    InvalidPassword,
+    InvalidCredentials,
     InvalidEmail,
+    InvalidPassword,
+    InvalidRefreshToken,
     InvalidResetCode,
 )
-from app.auth.schemas import UserRegisterSchema, UserLoginSchema, ChangePasswordSchema
-from app.projects.exceptions import UserNotFound
+from app.auth.interfaces.repository import IAuthRepository, IRedisRepository
+from app.auth.schemas import ChangePasswordSchema, UserLoginSchema, UserRegisterSchema
+from app.auth.service import AuthService
 from app.users.models import User
-from app.users.interfaces.repository import IUserRepository
 
 pytestmark = pytest.mark.asyncio
 
@@ -115,8 +113,10 @@ class TestLogin:
         user_repo.get_user_by_email.return_value = sample_user
         data = UserLoginSchema(email=sample_user.email, password='wrong_pass')
 
-        with patch('app.auth.service.verify_password', new=AsyncMock(return_value=False)):
-            with pytest.raises(InvalidCredentials):
+        with(
+            patch('app.auth.service.verify_password', new=AsyncMock(return_value=False)),
+            pytest.raises(InvalidCredentials)
+        ):
                 await service.login(data)
 
 
@@ -166,9 +166,11 @@ class TestRefreshNewToken:
         stored_token.user_id = uuid.uuid4()
         user_repo.get_token.return_value = stored_token
 
-        with patch('app.auth.service.token_expired', return_value=True):
-            with pytest.raises(ExpiredRefreshToken):
-                await service.refresh_new_token('old-refresh-token')
+        with(
+            patch('app.auth.service.token_expired', return_value=True),
+            pytest.raises(ExpiredRefreshToken)
+        ):
+            await service.refresh_new_token('old-refresh-token')
 
         user_repo.save_or_update_token.assert_not_awaited()
         user_repo.delete_token.assert_awaited_once_with(stored_token)
@@ -188,9 +190,11 @@ class TestChangePassword:
     async def test_change_password_invalid_old_password(self, service, user_repo, sample_user):
         data = ChangePasswordSchema(old_password='wrong-old-pass', new_password='new-pass')
 
-        with patch('app.auth.service.verify_password', new=AsyncMock(return_value=False)):
-            with pytest.raises(InvalidPassword):
-                await service.change_password(sample_user, data)
+        with(
+            patch('app.auth.service.verify_password', new=AsyncMock(return_value=False)),
+            pytest.raises(InvalidPassword)
+        ):
+            await service.change_password(sample_user, data)
 
         user_repo.update_password.assert_not_awaited()
 

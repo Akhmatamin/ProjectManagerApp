@@ -1,12 +1,12 @@
 import uuid
+from typing import Annotated
 
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
-from fastapi import APIRouter, Depends, status, UploadFile, File
-from typing import Annotated
+from fastapi import APIRouter, Depends, File, UploadFile, status
+
 from app.documents.interfaces.service import IDocumentService
 from app.shared.dependencies import get_current_user
 from app.users.models import User
-
 
 document_router = APIRouter(prefix="/document", tags=["documents"], route_class=DishkaRoute)
 

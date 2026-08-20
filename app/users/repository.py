@@ -1,8 +1,10 @@
 import uuid
-from .models import User
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from .interfaces.repository import IUserRepository
+from .models import User
 
 
 class UserRepository(IUserRepository):

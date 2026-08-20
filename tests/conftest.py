@@ -1,10 +1,8 @@
 from unittest.mock import MagicMock
+
 import pytest
+
 from app.shared.config import Settings
-from app.users.models import User
-from app.projects.models import Project
-from app.documents.models import Document
-from app.auth.models import RefreshToken
 
 
 @pytest.fixture

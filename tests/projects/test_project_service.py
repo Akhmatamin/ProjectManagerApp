@@ -3,16 +3,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.projects.service import ProjectService
-from app.projects.models import Project, ProjectMember, ProjectPermission
-from app.projects.schemas import ProjectUpdateSchema
 from app.projects.exceptions import (
-    ProjectNotFound,
-    NotMemberOrNoProject,
     AccessDenied,
+    NotMemberOrNoProject,
+    ProjectNotFound,
     UserAlreadyMember,
     UserNotFound,
 )
+from app.projects.models import Project, ProjectMember, ProjectPermission
+from app.projects.schemas import ProjectUpdateSchema
+from app.projects.service import ProjectService
 from app.shared.exceptions import InvalidLink
 
 pytestmark = pytest.mark.asyncio
@@ -349,9 +349,11 @@ class TestJoinProjectByToken:
         payload = self._decoded_payload(sample_project.id)
         invite_repo.get_invite_jti.return_value = None
 
-        with patch("app.projects.service.decode_invite_token", return_value=payload):
-            with pytest.raises(InvalidLink):
-                await service.join_project_by_token("token-value", uuid.uuid4())
+        with(
+            patch("app.projects.service.decode_invite_token", return_value=payload),
+            pytest.raises(InvalidLink)
+        ):
+            await service.join_project_by_token("token-value", uuid.uuid4())
 
     async def test_join_project_by_token_project_not_found(self, service, project_repo, invite_repo,
                                                              sample_project):
@@ -359,9 +361,11 @@ class TestJoinProjectByToken:
         invite_repo.get_invite_jti.return_value = {"email": None}
         project_repo.get_by_id.return_value = None
 
-        with patch("app.projects.service.decode_invite_token", return_value=payload):
-            with pytest.raises(ProjectNotFound):
-                await service.join_project_by_token("token-value", uuid.uuid4())
+        with(
+            patch("app.projects.service.decode_invite_token", return_value=payload),
+            pytest.raises(ProjectNotFound)
+        ):
+            await service.join_project_by_token("token-value", uuid.uuid4())
 
     async def test_join_project_by_token_user_not_found(self, service, project_repo, user_repo,
                                                           invite_repo, sample_project):
@@ -370,9 +374,11 @@ class TestJoinProjectByToken:
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_id.return_value = None
 
-        with patch("app.projects.service.decode_invite_token", return_value=payload):
-            with pytest.raises(UserNotFound):
-                await service.join_project_by_token("token-value", uuid.uuid4())
+        with(
+            patch("app.projects.service.decode_invite_token", return_value=payload),
+            pytest.raises(UserNotFound)
+        ):
+            await service.join_project_by_token("token-value", uuid.uuid4())
 
     async def test_join_project_by_token_email_mismatch(self, service, project_repo, user_repo,
                                                           invite_repo, sample_project, sample_user):
@@ -381,9 +387,11 @@ class TestJoinProjectByToken:
         project_repo.get_by_id.return_value = sample_project
         user_repo.get_by_id.return_value = sample_user
 
-        with patch("app.projects.service.decode_invite_token", return_value=payload):
-            with pytest.raises(AccessDenied):
-                await service.join_project_by_token("token-value", sample_user.id)
+        with(
+            patch("app.projects.service.decode_invite_token", return_value=payload),
+            pytest.raises(AccessDenied)
+        ):
+            await service.join_project_by_token("token-value", sample_user.id)
 
     async def test_join_project_by_token_already_member(self, service, project_repo, user_repo,
                                                           invite_repo, sample_project, sample_user):
@@ -393,8 +401,10 @@ class TestJoinProjectByToken:
         user_repo.get_by_id.return_value = sample_user
         project_repo.get_user_permission.return_value = ProjectPermission.READ
 
-        with patch("app.projects.service.decode_invite_token", return_value=payload):
-            with pytest.raises(UserAlreadyMember):
-                await service.join_project_by_token("token-value", sample_user.id)
+        with(
+            patch("app.projects.service.decode_invite_token", return_value=payload),
+            pytest.raises(UserAlreadyMember)
+        ):
+            await service.join_project_by_token("token-value", sample_user.id)
 
         project_repo.save_members_with_permission.assert_not_called()

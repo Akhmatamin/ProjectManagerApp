@@ -1,10 +1,12 @@
 import uuid
-from app.shared.db.base import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_file import FileField
-from typing import TYPE_CHECKING
+
+from app.shared.db.base import Base
 
 if TYPE_CHECKING:
     from app.projects.models import Project
